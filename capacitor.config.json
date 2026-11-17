@@ -1,0 +1,6 @@
+{
+  "appId": "com.markdave.gabrielmall",
+  "appName": "Gabriel Mall",
+  "webDir": "www",
+  "server": { "androidScheme": "http", "cleartext": true }
+}
