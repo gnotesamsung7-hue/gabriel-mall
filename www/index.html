@@ -13694,23 +13694,20 @@ function lanJoin(url) {
   });
 }
 const NET = {
-  room: null, nr: null, code: '', host: false, me: '', peers: [], on: {}, ok: false, unsub: [], mode: 'claude', ips: [],
+  room: null, nr: null, code: '', host: false, me: '', peers: [], on: {}, ok: false, unsub: [], mode: 'lan', ips: [],
   async avail() {
     if (this.ok) return true;
-    if (lanPlugin()) { this.mode = 'lan'; this.ok = true; return true; }
-    try { if (!window.claude || !window.claude.use) return false; this.room = await window.claude.use('room'); } catch (e) { this.room = null; }
-    this.ok = !!this.room; return this.ok;
+    /* Co-op is local Wi-Fi / hotspot only, through the Android app's relay. */
+    this.ok = !!lanPlugin(); return this.ok;
   },
   async open(code, name, host) {
     await this.leave();
     this.host = host;
-    if (this.mode === 'lan') {
-      let url;
-      if (host) { const r = await lanPlugin().start({ port: 8777 }); this.ips = (r && r.ips) || []; this.code = this.ips[0] || '127.0.0.1'; url = 'ws://127.0.0.1:8777'; }
-      else { this.code = code; url = 'ws://' + code + ':8777'; }
-      this.nr = await lanJoin(url);
-      this.nr.onClose = () => { if (this.on.lost) this.on.lost(); };
-    } else { this.code = code.toUpperCase(); this.nr = await this.room.join('gsm-' + this.code.toLowerCase()); }
+    let url;
+    if (host) { const r = await lanPlugin().start({ port: 8777 }); this.ips = (r && r.ips) || []; this.code = this.ips[0] || '127.0.0.1'; url = 'ws://127.0.0.1:8777'; }
+    else { this.code = code; url = 'ws://' + code + ':8777'; }
+    this.nr = await lanJoin(url);
+    this.nr.onClose = () => { if (this.on.lost) this.on.lost(); };
     for (const tp of ['start', 'st', 'ev', 'act', 'radio', 'end']) this.unsub.push(this.nr.on(tp, m => { if (m.sameTab) return; const h = this.on[tp]; if (h) h(m.data || {}, m); }, () => {}));
     this.unsub.push(this.nr.onPeers(ch => {
       this.peers = ch.peers.slice();
@@ -13727,7 +13724,7 @@ const NET = {
   async leave() {
     this.unsub.forEach(u => { try { u(); } catch (e) { } }); this.unsub = [];
     if (this.nr) { const n = this.nr; this.nr = null; try { await n.leave(); } catch (e) { } }
-    if (this.mode === 'lan' && this.host) { try { await lanPlugin().stop(); } catch (e) { } }
+    if (this.host) { try { await lanPlugin().stop(); } catch (e) { } }
     this.nr = null; this.peers = []; this.host = false; this.me = '';
   }
 };
@@ -13792,7 +13789,7 @@ const UI = (function () {
       '<p class="sub">Limang Gabi \u2014 five nights with the Barkada<span class="verchip">v' + VERSION + '</span></p><p class="est">Commonwealth Ave., Quezon City \u2022 Est. 1996 \u2022 Now playing: ' + esc(SAVE.set.name || 'Matthew') + '</p>' +
       '<ul class="dir">' +
       '<li><button data-go="solo"><span class="fl">UG</span><span>Play solo<small>Night ' + SAVE.nights + ' of 5 unlocked</small></span></button></li>' +
-      '<li><button data-go="coop"><span class="fl">2F</span><span>Co-op with radios<small>2\u20134 players, split map and cameras</small></span></button></li>' +
+      '<li><button data-go="coop"><span class="fl">2F</span><span>Co-op on Wi-Fi<small>2\u20134 phones on the same Wi-Fi or hotspot (Android app)</small></span></button></li>' +
       '<li><button data-go="story"><span class="fl">LG</span><span>The story<small>The Barkada, the rules, Mang Isko\u2019s tapes</small></span></button></li>' +
       '<li><button data-go="gallery"><span class="fl">\u2605</span><span>Gallery<small>Characters, cutscenes, game art prompts</small></span></button></li>' +
       '<li><button data-go="extras"><span class="fl">B</span><span>Share &amp; secrets<small>QR code, offline copy, Mang Isko\u2019s key</small></span></button></li>' +
@@ -13813,18 +13810,10 @@ const UI = (function () {
 
   /* ---------- co-op ---------- */
   async function coopScreen() {
-    show('<div class="wrap"><button class="back" data-go="menu">Back</button><h2>Co-op</h2><p>Checking the radio channel\u2026</p></div>', { id: 'coop' });
+    show('<div class="wrap"><button class="back" data-go="menu">Back</button><h2>Co-op on Wi-Fi</h2><p>Checking Wi-Fi co-op\u2026</p></div>', { id: 'coop' });
     const ok = await NET.avail(); if (cur !== 'coop') return;
-    if (ok && NET.mode === 'lan') return lanCoopScreen();
-    if (!ok) { show('<div class="wrap"><button class="back" data-go="menu">Back</button><h2>Co-op</h2><p>' + (IN_APP ? 'Co-op runs through the Claude link version of the game. Open it on every phone that joins (everyone signed in to Claude), host a game, and share the 4-letter code. The app plays solo.' : 'Co-op needs the game opened inside Claude while you\u2019re signed in, on every phone or computer that joins. This copy can\u2019t reach the radio channel, so solo play is available here.') + '</p>' + (IN_APP ? '<div class="qrbox"><span id="qrC"></span><p>Scan to open the Claude version.</p></div>' : '') + '</div>', { id: 'coop' }); if (IN_APP) $('qrC').appendChild(qrCanvas(ARTIFACT_URL, 360)); return; }
-    show('<div class="wrap"><button class="back" data-go="menu">Back</button><h2>Co-op with radios</h2>' +
-      '<p>One player hosts and shares a 4-letter code. Roles split the work: the <b>Mapa</b> holds the only map, the <b>Mata</b> is the only one who can work the CCTV rooms, and the <b>Piloto</b> and <b>Ilaw</b> back them up.</p>' +
-      '<div class="set"><label for="cn">Your name</label><input id="cn" maxlength="14" value="' + esc(SAVE.set.name || '') + '"></div>' +
-      '<div class="btns"><button class="btn" id="hostB">Host a game</button></div>' +
-      '<h4>Join a friend</h4><div class="inrow" style="max-width:340px"><input id="cc" maxlength="4" placeholder="CODE" style="text-transform:uppercase;font-family:var(--display);letter-spacing:.1em"><button class="btn" id="joinB">Join</button></div><p class="est" id="cErr"></p></div>', { id: 'coop' });
-    const nm = () => { const v = $('cn').value.trim() || 'Player'; SAVE.set.name = v; saveGame(); return v; };
-    $('hostB').onclick = async () => { SFX.init(); const code = Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[(Math.random() * 24) | 0]).join(''); try { await NET.open(code, nm(), true); S.roles = {}; lobby(); } catch (e) { $('cErr').textContent = 'Could not open the channel. Try again.'; } };
-    $('joinB').onclick = async () => { SFX.init(); const code = $('cc').value.trim().toUpperCase(); if (!/^[A-Z]{4}$/.test(code)) { $('cErr').textContent = 'Codes are 4 letters.'; return; } try { await NET.open(code, nm(), false); lobby(); } catch (e) { $('cErr').textContent = 'Could not join that code.'; } };
+    if (!ok) { show('<div class="wrap"><button class="back" data-go="menu">Back</button><h2>Co-op on Wi-Fi</h2><p>' + (IN_APP ? 'This version of the app is too old for Wi-Fi co-op. Download the newest APK, then try again.' : 'Co-op runs only on local Wi-Fi, phone to phone, in the Android app. Install the app on every phone, connect them to the same Wi-Fi (or to the host phone\u2019s hotspot), and host from one of them. This browser version plays solo.') + '</p><div class="qrbox"><span id="qrC"></span><p>Scan with an Android phone to download the app.</p></div></div>', { id: 'coop' }); $('qrC').appendChild(qrCanvas(APK_URL, 360)); return; }
+    lanCoopScreen();
   }
   function lanCoopScreen() {
     show('<div class="wrap"><button class="back" data-go="menu">Back</button><h2>Co-op on Wi-Fi</h2>' +
@@ -13897,7 +13886,7 @@ const UI = (function () {
   async function extrasScreen() {
     const d = await getDl();
     show('<div class="wrap"><button class="back" data-go="menu">Back</button><h2>Share &amp; secrets</h2>' +
-      '<h4>Share the game</h4><div class="qrbox"><span id="qrA"></span><div><p>Scan with another phone to open Gabriel Shopping Mall there.</p><div class="btns"><button class="btn" id="cpL">Copy link</button>' + (d ? '<button class="btn alt" id="svQ">Save QR image</button>' : '') + '</div>' + (d ? '<p class="est" style="margin-top:10px">Want it offline? <button class="chip" id="svH">Download the game (.html)</button><br>The offline copy plays solo; co-op needs Claude.</p>' : '') + '</div></div>' +
+      '<h4>Share the game</h4><div class="qrbox"><span id="qrA"></span><div><p>Scan with another phone to open Gabriel Shopping Mall there.</p><div class="btns"><button class="btn" id="cpL">Copy link</button>' + (d ? '<button class="btn alt" id="svQ">Save QR image</button>' : '') + '</div>' + (d ? '<p class="est" style="margin-top:10px">Want it offline? <button class="chip" id="svH">Download the game (.html)</button><br>The offline copy plays solo; co-op needs the Android app on local Wi-Fi.</p>' : '') + '</div></div>' +
       '<h4>Android app</h4><div class="qrbox"><span id="qrB"></span><div><p>Scan with an Android phone to download the APK. After it downloads, open it and allow installing from this source if Android asks.</p>' + (d ? '<div class="btns"><button class="btn alt" id="svA">Save APK QR image</button></div>' : '') + '</div></div>' +
       '<h4>Mang Isko\u2019s secret weapon</h4><p>The <b>Ilaw ni Isko</b> lantern only works after you show Mang Isko\u2019s code to your device\u2019s front camera. Open his card on another phone, print it, or hold up a screenshot \u2014 then scan it. It stays unlocked until you close the game.</p>' +
       '<div class="btns"><button class="btn" data-go="card">Show the secret card</button><button class="btn alt" data-go="scan" data-arg="extras">Scan secret code</button></div>' +
@@ -14246,7 +14235,7 @@ const UI = (function () {
 ;
 'use strict';
 /* ===== Gabriel Shopping Mall: Limang Gabi — core ===== */
-const VERSION = '1.2.1';
+const VERSION = '1.2.2';
 const CRATE_CODE = '1996';
 const PANELS_NEEDED = [2, 3, 4, 4, 4];
 const LOCK_HEAT = 30;
