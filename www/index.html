@@ -138,7 +138,8 @@ input,select{font:inherit;background:#0b1117;color:var(--paper);border:1px solid
 .est{font-size:12.5px;color:var(--dim);margin:0 0 20px}
 .dir{display:grid;gap:6px;max-width:420px;margin:0;padding:0;list-style:none}
 .dir button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:rgba(18,30,40,.86);border:1px solid var(--line);border-left:4px solid var(--kalabaw);border-radius:4px 10px 10px 4px;padding:11px 14px;font-size:16px;font-weight:600}
-@media (max-height:480px){.dir button{padding:7px 12px;font-size:14px}.sub{margin-top:6px}.est{margin-bottom:10px}}
+@media (max-height:720px){.dir button{padding:7px 12px;font-size:14.5px}.dir{gap:5px}.sub{margin-top:6px}.est{margin-bottom:10px}}
+@media (max-height:480px){.dir button{padding:5px 10px;font-size:13.5px}.dir small{font-size:11px}}
 .dir button:hover{border-left-color:var(--sale);background:rgba(30,46,60,.92)}
 .dir .fl{font-family:var(--display);font-size:13px;min-width:34px;height:28px;display:grid;place-items:center;background:var(--sale);color:#2b1a00;border-radius:4px}
 .dir small{display:block;font-size:12px;color:var(--dim);font-weight:500}
@@ -219,6 +220,10 @@ p{line-height:1.55;margin:0 0 12px;max-width:62ch}
 .artthumb img{width:100%;height:100%;object-fit:cover}
 .artrow textarea{width:100%;font:inherit;font-size:12.5px;background:#0b1117;color:var(--paper);border:1px solid var(--line);border-radius:7px;padding:7px;resize:vertical}
 @media (max-width:520px){.artrow{grid-template-columns:1fr}.artthumb{width:100%}}
+
+#say{position:absolute;left:50%;bottom:calc(196px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(560px,86vw);background:rgba(243,233,210,.96);color:#2a1d0c;border-radius:14px;padding:10px 14px;font-size:15px;line-height:1.4;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+#say::after{content:"";position:absolute;left:50%;bottom:-9px;margin-left:-9px;border:9px solid transparent;border-bottom:0;border-top-color:rgba(243,233,210,.96)}
+#say b{display:block;font-size:12px;letter-spacing:.04em;color:#8a4b00;text-transform:uppercase}
 </style>
 </head><body>
 <canvas id="gl"></canvas>
@@ -231,8 +236,8 @@ p{line-height:1.55;margin:0 0 12px;max-width:62ch}
 
 <div id="hud" class="hidden">
   <div class="meters">
-    <div class="meter"><b><span>Mall power</span><span id="pwTxt">100%</span></b><div class="bar"><i id="pwBar"></i></div></div>
-    <div class="meter"><b><span>Flashlight</span><span id="batTxt">100%</span></b><div class="bar"><i id="batBar"></i></div></div>
+    <div class="meter" id="pwMeter"><b><span>Mall power</span><span id="pwTxt">100%</span></b><div class="bar"><i id="pwBar"></i></div></div>
+    <div class="meter" id="batMeter"><b><span>Flashlight</span><span id="batTxt">100%</span></b><div class="bar"><i id="batBar"></i></div></div>
     <div class="meter" id="obj" style="font-weight:600"></div>
     <div class="meter hidden" id="lock" style="color:var(--alarm);font-weight:700"></div>
     <div class="meter hidden" id="wpn" style="color:var(--lantern);font-weight:600"></div>
@@ -245,6 +250,7 @@ p{line-height:1.55;margin:0 0 12px;max-width:62ch}
   <div id="stam"><i></i></div>
   <div id="prompt" class="hidden"><span id="promptTxt"></span><i class="hold" id="promptHold"></i></div>
   <div id="toast"></div>
+  <div id="say" class="hidden"><b id="sayWho"></b><span id="sayTxt"></span></div>
   <div id="suited" class="hidden"><b>You’re zipped into a spare mascot suit!</b><br>Radio your team. A teammate can unzip you by holding Interact next to you.</div>
   <div id="keys"></div>
 </div>
@@ -13514,6 +13520,7 @@ const STORY = {
     ['CCTV rooms are safe \u2014 for 30 seconds', 'Mang Isko taught the Barkada never to step into a guard room. But the old STAFF ONLY locks overheat after 30 seconds with someone inside, then fail until they cool down. Hop between the CCTV rooms scattered around the mall.'],
     ['The sun needs power panels', 'At 5:59 AM the clock stops until enough power panels are fixed (2 on night 1, up to all 4 later) \u2014 one on every floor. You have to explore!'],
     ['Stall doors and windows', 'Most stalls have doors \u2014 walk into one to push it open, and close it behind you to hide. The Barkada can open doors too, but it slows them down. Shop windows are glass: you can see them, and they can see you.'],
+    ['Co-op: take turns', 'In co-op one player is the Navigator: they hide in a CCTV room (their lock holds), see the whole map and every camera, and tap the map to drop a glowing ping for the team. Everyone else explores. Every in-game hour the turn switches \u2014 the Navigator must leave and the next player must find a CCTV room.'],
     ['Skateboards', 'Find a skateboard (Sports Hataw has one) to zoom around the mall. It\u2019s fast, but the wheels are loud.'],
     ['Flashlights stun them', 'Their eyes are old camcorders. Hold your light on Kardong, Moko or Tandang and their eyes overload and reboot.'],
     ['Masks fool them', 'Everyone got a cardboard Kardong mask at the anniversary promo. Wear it, keep your light off and walk slowly, and the SAYA Core thinks you are one of the barkada. Stay too close for too long and they notice.'],
@@ -13549,6 +13556,23 @@ const STORY = {
     { h: 'Tape 4 \u2014 Ang Susi', t: 'I printed a master key for the Core as a square code on the back of an old mall flyer. Show it to the Core\u2019s eye and it will hand you my lantern \u2014 Ilaw ni Isko. One flash sends the whole Barkada back to the stage. Don\u2019t waste it.' },
     { h: 'Tape 5 \u2014 Ang Tunay na Utos', t: 'If you\u2019re hearing this, you lasted. At the sixth bell of the fifth night the Core does a full restart. Say the true rule over the PA when it does, and they will remember who they are. Walang batang uuwing malungkot. Pakisabi sa kanila\u2026 sorry, mga anak.' }
   ],
+  day: {
+    stamps: [['Security Office', 2], ['Atrium', 2], ['Main Entrance Lobby', 2], ['Gabriel Department Store', 2], ['Sports Hataw', 2], ['Gabriel Supermart', 1], ['Kainan sa Baba Food Court', 1], ['Kainan sa Taas', 3], ['Tuwa Zone Arcade', 3], ['Cinema Hall', 3], ['Strike Lanes Bowling', 0], ['Tumbok Billiard Hall', 0], ['Basement Parking', 0], ['Service & Loading Dock', 0]],
+    bert: ['Magandang umaga! Day shift ako ngayon. Libutin mo ang mall habang maliwanag \u2014 mas madali sa gabi kung kabisado mo na.', 'The red-and-green CCTV rooms are scattered on every floor. Memorize where they are.', 'The escalator in the Atrium and the stairs on the west and east ends connect all four floors.', 'At night the power panels hide inside the stalls. In the day, just enjoy the aircon!'],
+    lolo: ['Ah, Gabriel Mall\u2026 I remember when the Barkada were brand new.', 'May naiwan akong gamit sa Lost & Found noon pa. Hindi ko na nakuha.', 'Ang mga letrang kumikislap sa karatula\u2026 may tinatagong alaala.', 'The man who built the Barkada loved dogs, you know. He built one first.', 'Kailan nga ba binuksan ang mall na ito? Nineteen ninety-something\u2026 ay, tumatanda na ako.'],
+    kid: ['Ang galing sumayaw ni Kardong!', 'Gusto ko si Moko, may cymbals siya!', 'Takot ako kay Pusang Gala\u2026 parang nakatitig siya.', 'Sabi ng kuya ko, gumagalaw daw sila sa gabi!', 'Tara laro tayo sa arcade!'],
+    shopper: ['Ang lamig ng aircon dito, sarap!', 'Sale daw sa Department Store mamaya.', 'Nakita mo ba yung sayaw ng Barkada sa stage?', 'Wag kang magpapagabi dito ha. May mga kwento\u2026', 'Saan ba yung CR dito?', 'Bibili lang ako ng load sa Lower Ground.', 'Ang daming tao ngayong weekend!', 'Pasyal lang, window shopping muna.'],
+    clerks: {
+      'Siomai Sentral': ['Siomai rice, ate? Pork o shark\u2019s fin?'], 'Halo-Halo Haven': ['Extra leche flan sa halo-halo mo?'], 'Taho Time': ['Tahooo! Mainit pa!'], 'Pares Pa More': ['Pares with extra sabaw, libre ang refill!'],
+      'Selpon City': ['Bagong labas na phone, may freebie na case!'], 'Drone Dito': ['Our demo drones are the best in QC. Kahit sa dilim, kita mo lahat!'],
+      'Sports Hataw': ['Skateboards, bola, sapatos \u2014 lahat dito! Ang bilis ng skateboard pero maingay ang gulong.'], 'Laruan Land': ['Mga laruang Barkada, mabenta! Pero yung Kardong plushie, parang nakatingin\u2026'],
+      'Kape\u2019t Kwento Caf\u00e9': ['Kapeng barako para gising ka buong gabi.'], 'Ticket Booth & Snack Bar': ['Last full show sa Cinema 3! Popcorn?'],
+      'Hatid Agad Courier': ['Padala? Bukas ang dating, promise.'], 'Gupit Pogi Barbershop': ['Gupit pogi, sir? Barber\u2019s cut lang!'], 'Botika Bayani': ['Bawal ang matulog sa mall, iho. Uwi ka bago mag-alas diyes.'],
+      'Strike Lanes Bowling': ['Strike! Rent ka ng sapatos, size?'], 'Gabriel Supermart': ['Paper or plastic? Ay, eco-bag na pala tayo.'], 'Tuwa Zone Arcade': ['Tokens dito! Claw machine ang paborito ng mga bata.'],
+      'Kusina ni Lola': ['Sinigang ni Lola, parang luto sa bahay.'], 'Burger Bayan': ['Burger Bayan, the burger with a big heart!']
+    },
+    clerkNames: ['Ate Liza', 'Kuya Dodong', 'Ate Rhea', 'Kuya Paolo', 'Ate Jessa', 'Kuya Ramil', 'Ate Weng', 'Kuya Arnel', 'Ate Grace', 'Kuya Boyet', 'Ate Lyn', 'Kuya Jayson']
+  },
   art: [
     ['key_art_title', 'Title key art', 'Key art for a kid-friendly spooky survival game: the dark atrium of a 1990s Filipino shopping mall at midnight, a small purple stage with striped red curtains, four robot mascots standing in a row with glowing eyes \u2014 a carabao in a barong with a salakot hat, a bellhop monkey with cymbals, a calico cat, and a rooster in a red vest. Big blocky mall signage that reads GABRIEL SHOPPING MALL.'],
     ['char_kardong_kalabaw', 'Kardong Kalabaw', 'Character sheet of Kardong Kalabaw, a big chunky robot carabao mascot wearing a blue barong vest and red sash, a woven salakot hat between curved horns, a gold nose ring, glowing amber eyes, slightly worn paint and visible servo joints. Full body, front three-quarter view.'],
@@ -13767,6 +13791,7 @@ const UI = (function () {
     if (where === 'solo') return nightsScreen();
     if (where === 'night') { closeScreens(); S.solo = true; S.roles = {}; startNight(+arg, (Math.random() * 1e6) | 0); if (+arg === 1 && !SAVE.seenIntro) { SAVE.seenIntro = true; saveGame(); playCut('intro'); } return; }
     if (where === 'gallery') return galleryScreen(arg);
+    if (where === 'day') { closeScreens(); return startDay(); }
     if (where === 'coop') return coopScreen();
     if (where === 'story') return storyScreen();
     if (where === 'extras') return extrasScreen();
@@ -13782,13 +13807,14 @@ const UI = (function () {
 
   /* ---------- title ---------- */
   function toMenu() {
-    S.mode = 'menu'; S.over = false; S.paused = false; P.suited = false; closePanels(); hideHud();
+    S.mode = 'menu'; S.over = false; S.paused = false; P.suited = false; S.day = false; clearNpcs(); closePanels(); hideHud(); $('say').classList.add('hidden');
     if (D.on) droneOff(); $('gl').className = ''; $('maskfx').classList.remove('on');
     const t = 'GABRIEL', m = 'SHOPPING MALL';
     show('<div class="wrap"><h1 class="sign">' + t + '<br>' + m.slice(0, 11) + '<span class="flick" id="flickL">L</span>' + m.slice(12) + '</h1>' +
       '<p class="sub">Limang Gabi \u2014 five nights with the Barkada<span class="verchip">v' + VERSION + '</span></p><p class="est">Commonwealth Ave., Quezon City \u2022 Est. 1996 \u2022 Now playing: ' + esc(SAVE.set.name || 'Matthew') + '</p>' +
       '<ul class="dir">' +
       '<li><button data-go="solo"><span class="fl">UG</span><span>Play solo<small>Night ' + SAVE.nights + ' of 5 unlocked</small></span></button></li>' +
+      '<li><button data-go="day"><span class="fl">\u2600</span><span>Day visit<small>Explore the mall with the lights on \u2022 passport ' + SAVE.passport.length + '/' + STORY.day.stamps.length + '</small></span></button></li>' +
       '<li><button data-go="coop"><span class="fl">2F</span><span>Co-op on Wi-Fi<small>2\u20134 phones on the same Wi-Fi or hotspot (Android app)</small></span></button></li>' +
       '<li><button data-go="story"><span class="fl">LG</span><span>The story<small>The Barkada, the rules, Mang Isko\u2019s tapes</small></span></button></li>' +
       '<li><button data-go="gallery"><span class="fl">\u2605</span><span>Gallery<small>Characters, cutscenes, game art prompts</small></span></button></li>' +
@@ -13817,12 +13843,12 @@ const UI = (function () {
   }
   function lanCoopScreen() {
     show('<div class="wrap"><button class="back" data-go="menu">Back</button><h2>Co-op on Wi-Fi</h2>' +
-      '<p>Everyone joins the same Wi-Fi \u2014 or the host turns on their phone\u2019s hotspot and the others connect to it. No internet needed. The <b>Mapa</b> holds the only map, the <b>Mata</b> works the CCTV rooms, and the <b>Piloto</b> and <b>Ilaw</b> back them up.</p>' +
+      '<p>Everyone joins the same Wi-Fi \u2014 or the host turns on their phone\u2019s hotspot and the others connect to it. No internet needed. Players take turns: one <b>Navigator</b> hides in a CCTV room with the map and cameras and guides the others, while the <b>Explorers</b> roam the mall. Every in-game hour the turn switches.</p>' +
       '<div class="set"><label for="cn">Your name</label><input id="cn" maxlength="14" value="' + esc(SAVE.set.name || '') + '"></div>' +
       '<div class="btns"><button class="btn" id="hostB">Host on this phone</button></div>' +
       '<h4>Join the host</h4><div class="btns"><button class="btn alt" id="scanB">Scan host\u2019s QR</button></div><div class="inrow" style="max-width:360px;margin-top:8px"><input id="cc" inputmode="decimal" placeholder="Host address, e.g. 192.168.43.1"><button class="btn" id="joinB">Join</button></div><p class="est" id="cErr"></p></div>', { id: 'coop' });
     const nm = () => { const v = $('cn').value.trim() || 'Player'; SAVE.set.name = v; saveGame(); return v; };
-    $('hostB').onclick = async () => { SFX.init(); $('cErr').textContent = 'Starting\u2026'; try { await NET.open('', nm(), true); S.roles = {}; lobby(); } catch (e) { $('cErr').textContent = 'Could not start hosting: ' + (e && e.message || e); } };
+    $('hostB').onclick = async () => { SFX.init(); $('cErr').textContent = 'Starting\u2026'; try { await NET.open('', nm(), true); S.navOrder = []; lobby(); } catch (e) { $('cErr').textContent = 'Could not start hosting: ' + (e && e.message || e); } };
     const join = async ip => { $('cErr').textContent = 'Connecting to ' + ip + '\u2026'; try { await NET.open(ip, nm(), false); lobby(); } catch (e) { $('cErr').textContent = 'Could not reach ' + ip + '. Check that both phones are on the same Wi-Fi or hotspot.'; } };
     $('joinB').onclick = () => { SFX.init(); const ip = $('cc').value.trim(); if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) { $('cErr').textContent = 'Type the address shown on the host\u2019s screen.'; return; } join(ip); };
     $('scanB').onclick = () => { nm(); scanScreen('coop', 'lan', ip => { lanCoopScreen(); setTimeout(() => join(ip), 50); }); };
@@ -13831,7 +13857,7 @@ const UI = (function () {
     const host = NET.host;
     const lanH = NET.mode === 'lan' && host;
     show('<div class="wrap"><button class="back" data-go="quit">Leave</button><h2>Lobby</h2>' + (NET.mode === 'lan' ? (lanH ? '<p>Friends on the same Wi-Fi or your hotspot can scan this, or type the address:</p><div class="qrbox"><span id="qrL"></span><div><div class="code" style="font-size:26px;letter-spacing:.04em">' + esc(NET.code) + '</div>' + (NET.ips && NET.ips.length > 1 ? '<p class="est">Other addresses: ' + esc(NET.ips.slice(1).join(', ')) + '</p>' : '') + '</div></div>' : '<p>Connected to ' + esc(NET.code) + '</p>') : '<p>Share this code with your team:</p><div class="code">' + NET.code + '</div>') +
-      '<div class="plist" id="plist"></div>' + (host ? '<p class="est">Tap a role to swap it.</p><div class="set"><label for="ln">Night</label><select id="ln">' + [1, 2, 3, 4, 5].filter(n => n <= SAVE.nights).map(n => '<option value="' + n + '">Night ' + n + '</option>').join('') + '</select></div><div class="btns"><button class="btn" id="startB">Start the night</button></div><p class="est" id="lErr"></p>' : '<p class="est">Waiting for the host to start\u2026</p>') + '</div>', { id: 'lobby' });
+      '<p class="est" style="margin:10px 0 0">Turn order \u2014 the Navigator hides in a CCTV room with the map and cameras; everyone else explores. The turn passes down the list every in-game hour.</p><div class="plist" id="plist"></div>' + (host ? '<div class="set"><label for="ln">Night</label><select id="ln">' + [1, 2, 3, 4, 5].filter(n => n <= SAVE.nights).map(n => '<option value="' + n + '">Night ' + n + '</option>').join('') + '</select></div><div class="btns"><button class="btn" id="startB">Start the night</button></div><p class="est" id="lErr"></p>' : '<p class="est">Waiting for the host to start\u2026</p>') + '</div>', { id: 'lobby' });
     if (lanH) $('qrL').appendChild(qrCanvas('GSMLAN:' + NET.code, 320));
     if (host) { $('ln').value = Math.min(SAVE.nights, 5); $('startB').onclick = () => { if (NET.others().length < 1) { $('lErr').textContent = 'You need at least one teammate in the lobby. For one player, use Play solo.'; return; } const n = +$('ln').value; closeScreens(); hostStart(n); }; }
     lobbyRefresh();
@@ -13840,10 +13866,11 @@ const UI = (function () {
     const el = $('plist'); if (!el || cur !== 'lobby') return;
     if (NET.host) assignRolesPreview();
     const list = NET.peers.filter(p => p.kind === 'viewer');
-    el.innerHTML = list.map(p => { const q = p.presence || {}, r = S.roles[p.peer]; return '<div><span>' + esc(q.n || 'Player') + (p.isMe && p.sameTab ? ' (you)' : '') + (q.host ? ' \u2022 host' : '') + '</span>' + (NET.host ? '<button class="chip" data-peer="' + p.peer + '">' + (r ? ROLES[r].name.split(' ')[0] : '\u2026') + '</button>' : '<small>' + (r ? ROLES[r].name.split(' ')[0] : '') + '</small>') + '</div>'; }).join('') || '<div>Connecting\u2026</div>';
-    el.querySelectorAll('[data-peer]').forEach(b => b.onclick = () => { const id = b.dataset.peer, i = ROLE_ORDER.indexOf(S.roles[id]); S.roles[id] = ROLE_ORDER[(i + 1) % 4]; SFX.ui(); lobbyRefresh(); });
+    const order = NET.host ? (S.navOrder || []) : list.map(p => p.peer), byId = {}; list.forEach(p => byId[p.peer] = p);
+    el.innerHTML = order.filter(id => byId[id]).map((id, i) => { const p = byId[id], q = p.presence || {}; return '<div><span>' + (i + 1) + '. ' + esc(q.n || 'Player') + (p.isMe && p.sameTab ? ' (you)' : '') + (q.host ? ' \u2022 host' : '') + '</span>' + (i === 0 ? '<small>Navigator first</small>' : (NET.host ? '<button class="chip" data-peer="' + id + '">Navigate first</button>' : '<small>Explorer</small>')) + '</div>'; }).join('') || '<div>Connecting\u2026</div>';
+    el.querySelectorAll('[data-peer]').forEach(b => b.onclick = () => { const id = b.dataset.peer; S.navOrder = [id].concat(S.navOrder.filter(x => x !== id)); SFX.ui(); lobbyRefresh(); });
   }
-  function assignRolesPreview() { if (!NET.me) return; assignRoles(); const ids = new Set(NET.peers.map(p => p.peer)); for (const k in S.roles) if (!ids.has(k)) delete S.roles[k]; }
+  function assignRolesPreview() { if (!NET.me) return; assignRoles(); }
   async function quitToMenu() { if (!S.solo && NET.nr) { if (NET.host) NET.emit('end', {}); await NET.leave(); } S.solo = true; toMenu(); }
 
   /* ---------- story ---------- */
@@ -14094,11 +14121,15 @@ const UI = (function () {
   function startHud() {
     $('hud').classList.remove('hidden'); $('touch').classList.toggle('hidden', !coarse); log = []; fullLog = []; renderLog();
     $('keys').innerHTML = coarse ? '' : '<kbd>Space</kbd> use \u2022 <kbd>F</kbd> light \u2022 <kbd>M</kbd> mask \u2022 <kbd>Q</kbd>/<kbd>E</kbd> peek \u2022 <kbd>C</kbd> crouch<br><kbd>Tab</kbd> map \u2022 <kbd>R</kbd> radio \u2022 <kbd>G</kbd> drone \u2022 <kbd>K</kbd> skate \u2022 <kbd>V</kbd> view \u2022 <kbd>Esc</kbd> pause';
-    const r = role(); $('role').innerHTML = esc(SAVE.set.name) + '<br>' + esc(r.name);
+    roleRefresh();
     $('suited').classList.add('hidden'); $('gl').className = '';
   }
   function hideHud() { $('hud').classList.add('hidden'); $('touch').classList.add('hidden'); $('droneOsd').classList.add('hidden'); $('droneBtns').classList.add('hidden'); $('maskfx').classList.remove('on'); $('scan').classList.remove('on'); $('noise').style.opacity = 0; }
-  function nightCard(n) { toast('Night ' + n + ' \u2014 12:00 AM', 3200); radio('Kuya Bert', S.solo ? STORY.intro[n - 1] : 'Team, stick together. Mapa has the map, Mata runs the cameras. Radio everything.'); if (!S.solo) radio('Role', role().d); }
+  let sayT = null;
+  function say(who, txt) { $('sayWho').textContent = who; $('sayTxt').textContent = txt; $('say').classList.remove('hidden'); clearTimeout(sayT); sayT = setTimeout(() => $('say').classList.add('hidden'), 4500); }
+  function dayCard() { toast('Araw sa Gabriel \u2014 10:00 AM', 3000); radio('Kuya Bert', STORY.day.bert[0]); radio('Tip', 'Talk to people with ' + (coarse ? 'Use' : 'Space') + '. Visit every spot in the Mall passport.'); }
+  function roleRefresh() { const r = role(); $('role').innerHTML = esc(SAVE.set.name) + '<br>' + esc(r.name) + (S.solo ? '' : '<br><span id="swT"></span>'); }
+  function nightCard(n) { toast('Night ' + n + ' \u2014 12:00 AM', 3200); radio('Kuya Bert', S.solo ? STORY.intro[n - 1] : 'Team, take turns! One Navigator hides in a CCTV room with the map and cameras, everyone else explores. You switch every hour.'); if (!S.solo) radio(role().name, role().d); }
   function toast(t, ms) { const e = $('toast'); e.textContent = t; e.style.opacity = 1; clearTimeout(toastT); toastT = setTimeout(() => e.style.opacity = 0, ms || 2200); }
   function name(id) { if (id === pid()) return 'You'; return remoteName.get(id) || (NET.peers.find(p => p.peer === id) || { presence: {} }).presence.n || 'Teammate'; }
   function radio(from, msg, ping) {
@@ -14120,13 +14151,16 @@ const UI = (function () {
     if (hudT > 0) return; hudT = 0.1;
     const pw = Math.max(0, S.power); $('pwTxt').textContent = Math.ceil(pw) + '%'; $('pwBar').style.width = pw + '%'; $('pwBar').classList.toggle('low', pw < 25);
     $('batTxt').textContent = Math.ceil(P.bat) + '%'; $('batBar').style.width = P.bat + '%';
+    if (!S.solo && $('swT')) { const rem = Math.ceil(SAVE.set.hour - (S.time % SAVE.set.hour)); const nav = S.navId === pid(); $('swT').textContent = S.hour >= 5 ? (nav ? 'Last turn' : '') : 'Switch in ' + rem + 's'; $('swT').style.color = rem <= 10 ? 'var(--alarm)' : 'var(--crt)'; }
     $('lanternMeter').classList.toggle('hidden', !S.secret);
-    { const need = PANELS_NEEDED[S.night - 1], dn = S.panels.filter(q => q.done).length; $('obj').innerHTML = (dn >= need ? '<span style="color:var(--crt)">\u2713</span>' : '\u26A1') + ' Power panels ' + dn + '/' + need + (dn >= need ? ' \u2014 morning reset ready' : ' \u2014 needed for 6 AM'); }
-    { const r = inSafe(P) ? roomAt(P.f, P.x, P.z) : null, lk = $('lock'); if (r && r.kind === 'cctv' && S.power > 0) { lk.classList.remove('hidden'); lk.textContent = r.hot ? 'LOCK FAILED \u2014 get out!' : 'Room lock: ' + Math.max(0, Math.ceil(LOCK_HEAT - r.heat)) + 's'; } else lk.classList.add('hidden'); }
+    if (S.day) { const g = SAVE.passport.length, tot = STORY.day.stamps.length; $('obj').innerHTML = (g >= tot ? '<span style="color:var(--crt)">\u2713</span>' : '\u2605') + ' Mall passport ' + g + '/' + tot; } else { const need = PANELS_NEEDED[S.night - 1], dn = S.panels.filter(q => q.done).length; $('obj').innerHTML = (dn >= need ? '<span style="color:var(--crt)">\u2713</span>' : '\u26A1') + ' Power panels ' + dn + '/' + need + (dn >= need ? ' \u2014 morning reset ready' : ' \u2014 needed for 6 AM'); }
+    { const r = inSafe(P) ? roomAt(P.f, P.x, P.z) : null, lk = $('lock'); if (r && r.kind === 'cctv' && S.power > 0 && !S.day) { lk.classList.remove('hidden'); lk.textContent = r.hot ? 'LOCK FAILED \u2014 get out!' : 'Room lock: ' + Math.max(0, Math.ceil(LOCK_HEAT - r.heat)) + 's'; } else lk.classList.add('hidden'); }
     $('bRocket').classList.toggle('hidden', !(P.rockets > 0)); $('bRocket').textContent = 'Kwitis ' + P.rockets; $('bSkate').classList.toggle('hidden', !P.skate); $('bSkate').classList.toggle('on', P.riding);
     const hasW = S.lockerUsed && (P.conf > 0 || P.parol > 0 || P.gold || P.shieldT > 0) || P.rockets > 0; $('wpn').classList.toggle('hidden', !hasW); if (hasW) $('wpn').textContent = [S.lockerUsed ? 'Confetti ' + P.conf : '', S.lockerUsed ? 'Parol ' + (P.shieldT > 0 ? Math.ceil(P.shieldT) + 's' : P.parol) : '', P.gold ? 'Gold light' : '', P.rockets > 0 ? 'Kwitis ' + P.rockets : ''].filter(Boolean).join(' \u2022 ');
     $('bConf').classList.toggle('hidden', !(P.conf > 0)); $('bParol').classList.toggle('hidden', !(P.parol > 0)); $('bConf').textContent = 'Confetti ' + P.conf; $('lanTxt').textContent = S.lantern + ' left'; $('bLantern').classList.toggle('hidden', !S.secret);
-    $('clkT').textContent = fmtHour(Math.min(5, Math.floor(S.time / SAVE.set.hour))); $('clkN').textContent = 'Night ' + S.night + (S.black ? ' \u2022 BLACKOUT' : '');
+    if (S.day) { const mins = Math.min(11 * 60, Math.floor(S.time)), hh = 10 + Math.floor(mins / 60), mm = mins % 60, h12 = ((hh + 11) % 12) + 1; $('clkT').textContent = h12 + ':' + String(mm).padStart(2, '0') + (hh >= 12 ? ' PM' : ' AM'); $('clkN').textContent = mins >= 660 ? 'Day visit \u2022 mall closing' : 'Day visit'; }
+    else { $('clkT').textContent = fmtHour(Math.min(5, Math.floor(S.time / SAVE.set.hour))); $('clkN').textContent = 'Night ' + S.night + (S.black ? ' \u2022 BLACKOUT' : ''); }
+    ['pwMeter', 'batMeter'].forEach(id => $(id).classList.toggle('hidden', !!S.day));
     $('zone').textContent = S.mode === 'cctv' ? 'CCTV monitor' : zoneTxt(P.f, P.x, P.z);
     $('stam').firstElementChild.style.width = P.stam + '%'; $('stam').style.opacity = P.stam < 99 ? 1 : 0;
     $('bFlash').classList.toggle('on', P.flash); $('bMask').classList.toggle('on', P.mask); $('bCrouch').classList.toggle('on', P.cr); $('tView').textContent = P.view === 'fp' ? '3rd' : '1st'; $('tDrone').classList.toggle('on', S.mode === 'drone');
@@ -14144,7 +14178,7 @@ const UI = (function () {
   function closePanels() { ['mapPanel', 'radioPanel'].forEach(id => $(id).classList.add('hidden')); $('tMap').classList.remove('on'); $('tRadio').classList.remove('on'); }
   function toggleMap() {
     if (!$('mapPanel').classList.contains('hidden')) { closePanels(); return; }
-    if (!role().map) { toast('Only the Mapa has the map \u2014 radio them for directions'); return; }
+    if (!role().map) { toast('Only the Navigator has the map \u2014 follow their pings and radio'); return; }
     closePanels(); $('mapPanel').classList.remove('hidden'); $('tMap').classList.add('on'); mapF = P.f; buildMapFloors(); drawMap(); if (document.exitPointerLock) document.exitPointerLock();
   }
   function buildMapFloors() { $('mapFloors').innerHTML = [0, 1, 2, 3].map(f => '<button class="chip' + (f === mapF ? ' on' : '') + '" data-f="' + f + '">' + FLOOR_SHORT[f] + '</button>').join(''); $('mapFloors').querySelectorAll('button').forEach(b => b.onclick = () => { mapF = +b.dataset.f; buildMapFloors(); drawMap(); }); }
@@ -14180,12 +14214,14 @@ const UI = (function () {
     if (!$('radioPanel').classList.contains('hidden')) { closePanels(); return; }
     closePanels(); $('radioPanel').classList.remove('hidden'); $('tRadio').classList.add('on'); if (document.exitPointerLock) document.exitPointerLock();
     const q = $('quick');
-    if (S.solo) { q.innerHTML = BERT.map((b, i) => '<button class="chip" data-i="' + i + '">' + esc(b[0]) + '</button>').join(''); q.querySelectorAll('button').forEach(b => b.onclick = () => { const B = BERT[+b.dataset.i]; radio('You', B[0]); SFX.radio(); setTimeout(() => { radio('Kuya Bert', B[1]()); SFX.radio(); }, 700); }); $('radioType').classList.add('hidden'); }
+    const LIST = S.day ? DAYBERT : BERT;
+    if (S.solo) { q.innerHTML = LIST.map((b, i) => '<button class="chip" data-i="' + i + '">' + esc(b[0]) + '</button>').join(''); q.querySelectorAll('button').forEach(b => b.onclick = () => { const B = LIST[+b.dataset.i]; radio('You', B[0]); SFX.radio(); setTimeout(() => { radio('Kuya Bert', B[1]()); SFX.radio(); }, 700); }); $('radioType').classList.add('hidden'); }
     else { q.innerHTML = QUICK.map((t, i) => '<button class="chip" data-i="' + i + '">' + esc(t) + '</button>').join(''); q.querySelectorAll('button').forEach(b => b.onclick = () => sendRadio(QUICK[+b.dataset.i], true)); $('radioType').classList.remove('hidden'); }
     renderLog();
   }
   function sendRadio(m, withPos) { if (!m) return; const p = withPos ? [P.f, Math.round(P.x * 10) / 10, Math.round(P.z * 10) / 10] : null; NET.emit('radio', { ep: S.epoch, n: SAVE.set.name, m, p }); radio('You', m, p); SFX.radio(); }
   function bertFuse() { let best = null, bd = 1e9; for (const it of S.items) { if (it.taken || it.type !== 'fuse') continue; const d = Math.hypot(it.x - P.x, it.z - P.z) + Math.abs(it.f - P.f) * 60; if (d < bd) { bd = d; best = it; } } return best ? 'Nearest fuse: ' + FLOOR_NAMES[best.f] + ', ' + best.name + '.' : 'Wala na \u2014 no fuses left. Try the generator in the Loading Dock.'; }
+  const DAYBERT = [['Where should I go next?', () => { const left = STORY.day.stamps.filter(([n]) => !SAVE.passport.includes(n)); if (!left.length) return 'Kabisado mo na ang buong mall! Ready ka na para sa gabi.'; const [n, f] = left[(Math.random() * left.length) | 0]; return 'Try ' + n + ' on the ' + FLOOR_NAMES[f] + ' floor. ' + left.length + ' passport stamps left.'; }], ['Where are the CCTV rooms?', () => 'There are 8: two each on the Basement (Parking Guard Post, Loading Dock), Lower Ground, Upper Ground (incl. this Security Office) and 2nd Floor. Open the map to see them.'], ['Any tips for tonight?', bertTip]];
   function bertPanels() { const left = S.panels.filter(q => !q.done); if (!left.length) return 'All panels are fixed. Ayos! Just hold on until 6.'; return 'Still broken: ' + left.map(q => FLOOR_NAMES[q.f] + ' (' + q.name + ')').join(', ') + '.'; }
   function bertCode() { return S.poster ? 'I taped the generator code on a wall in ' + FLOOR_NAMES[S.poster.f] + ', inside ' + S.poster.name + '. The keypad is at the Loading Dock in the Basement.' : 'Hmm, I lost the code poster.'; }
   function bertBots() { if (!S.bots.length) return 'Just you, I think.'; return S.bots.map(b => b.name + (b.su ? ' (zipped in a suit! ' + FLOOR_NAMES[b.f] + ')' : ' (hiding, ' + FLOOR_NAMES[b.f] + ')')).join(' \u2022 ') + '. Unzip anyone who got caught.'; }
@@ -14229,13 +14265,13 @@ const UI = (function () {
     $('ctTabs').querySelectorAll('button').forEach(b => b.onclick = () => { $('ctTabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); ['cams', 'doors', 'pa'].forEach((t, i) => $(['camList', 'doorList', 'paList'][i]).classList.toggle('hidden', t !== b.dataset.t)); SFX.click(); }); SFX.setVol(SAVE.set.vol);
     toMenu();
   }
-  return { init, toMenu, show, closeScreens, toast, radio, name, tape, prompt, promptHold, hud, startHud, nightCard, result, pause, panelOpen, panelBlocks, closePanels, toggleMap, toggleRadio, cctvOpen, cctvClose, cctvRefresh, droneOpen, lobbyRefresh, lockerScan, puzzleWires, puzzleKeypad, puzzleJingle, cutOpen, cutClose, cutCaption, cutArt, galleryScreen, screenOpen: () => !!cur, solidScreen: () => solid && !!cur };
+  return { init, toMenu, show, closeScreens, toast, radio, name, tape, prompt, promptHold, hud, startHud, nightCard, result, pause, panelOpen, panelBlocks, closePanels, toggleMap, toggleRadio, cctvOpen, cctvClose, cctvRefresh, droneOpen, lobbyRefresh, lockerScan, puzzleWires, puzzleKeypad, puzzleJingle, cutOpen, cutClose, cutCaption, cutArt, galleryScreen, say, dayCard, roleRefresh, screenOpen: () => !!cur, solidScreen: () => solid && !!cur };
 })();
 
 ;
 'use strict';
 /* ===== Gabriel Shopping Mall: Limang Gabi — core ===== */
-const VERSION = '1.2.2';
+const VERSION = '1.4.0';
 const CRATE_CODE = '1996';
 const PANELS_NEEDED = [2, 3, 4, 4, 4];
 const LOCK_HEAT = 30;
@@ -14250,7 +14286,9 @@ const ROLES = {
   mapa: { name: 'Mapa \u2014 Navigator', d: 'Only you have the mall map. Guide your team by radio.', map: 1, cctv: 0 },
   mata: { name: 'Mata \u2014 Camera Operator', d: 'Only you can work the CCTV rooms: cameras, shutters, PA lures.', map: 0, cctv: 1 },
   piloto: { name: 'Piloto \u2014 Drone Pilot', d: 'Your drone flies twice as long. Scout and buzz mascots away.', map: 0, cctv: 0, drone: 2 },
-  ilaw: { name: 'Ilaw \u2014 Light Keeper', d: 'Your flashlight lasts twice as long and stuns faster.', map: 0, cctv: 0, light: 2 }
+  ilaw: { name: 'Ilaw \u2014 Light Keeper', d: 'Your flashlight lasts twice as long and stuns faster.', map: 0, cctv: 0, light: 2 },
+  nav: { name: 'Navigator', d: 'Your turn to hide in a CCTV room. You have the map and the cameras \u2014 tap the map to ping a spot for the explorers. Your room\u2019s lock holds until the switch.', map: 1, cctv: 1 },
+  exp: { name: 'Explorer', d: 'Explore the mall, fix the power panels and grab fuses. Follow the Navigator\u2019s pings and radio calls. No map for you!', map: 0, cctv: 0 }
 };
 const ROLE_ORDER = ['mapa', 'mata', 'piloto', 'ilaw'];
 const AN_DEF = {
@@ -14264,7 +14302,7 @@ const ALL_AN = ['kardong', 'moko', 'pusa', 'tandang', 'higante'];
 const AN_TYPES = ['kardong', 'moko', 'pusa', 'tandang'];
 const ST_CODE = ['dormant', 'patrol', 'investigate', 'chase', 'stun', 'linger', 'bash', 'return', 'windup', 'charge'];
 
-let SAVE = { nights: 1, tapes: [], stars: {}, bantay: false, bossSeen: false, seenIntro: false, set: { name: 'Matthew', sens: 1, scare: 'full', vol: 0.8, quality: 'high', hour: 60 } };
+let SAVE = { passport: [], nights: 1, tapes: [], stars: {}, bantay: false, bossSeen: false, seenIntro: false, set: { name: 'Matthew', sens: 1, scare: 'full', vol: 0.8, quality: 'high', hour: 60 } };
 try { const s = JSON.parse(localStorage.getItem('gsm5')); if (s) SAVE = Object.assign(SAVE, s, { set: Object.assign(SAVE.set, s.set || {}) }); } catch (e) { }
 function saveGame() { try { localStorage.setItem('gsm5', JSON.stringify(SAVE)); } catch (e) { } }
 
@@ -14290,7 +14328,7 @@ const P = {
 const D = { on: false, f: 2, x: 0, y: 2.1, z: 0, h: 0, p: -0.15, bat: 100, broken: 0, model: null };
 const pid = () => (S.solo ? 'me' : (NET.me || 'me'));
 const isAuth = () => S.solo || NET.host;
-const role = () => ROLES[S.solo ? 'solo' : (S.roles[pid()] || 'mapa')];
+const role = () => ROLES[S.solo ? 'solo' : (S.navId === pid() ? 'nav' : 'exp')];
 
 /* ---------- helpers ---------- */
 const cellOf = (x, z) => [Math.floor(x / CELL), Math.floor(z / CELL)];
@@ -14511,6 +14549,7 @@ function genItems(night, seed) {
   return { items: out, gen, panels, poster, gcode };
 }
 function startNight(n, seed, roles, t0) {
+  S.day = false; clearNpcs();
   S.night = n; S.seed = seed; S.time = t0 || 0; S.hour = Math.floor(S.time / SAVE.set.hour); S.hourShown = S.hour; S.power = 100; S.black = false; S.genUsed = false; S.over = false; S.ending = false;
   S.suited = new Set(); S.noises = []; S.pings = []; S.lantern = 3; S.epoch++; S.paused = false; S.winT = 0;
   if (roles) S.roles = roles;
@@ -14543,8 +14582,65 @@ function startNight(n, seed, roles, t0) {
   D.on = false; D.bat = 100; D.broken = 0;
   remotes.forEach(r => { scene.remove(r.m.g); scene.remove(r.label); if (r.dr) scene.remove(r.dr.g); }); remotes.clear();
   showFloor(P.f); S.mode = 'play'; S.cctv = null;
-  UI.startHud(); UI.nightCard(n);
+  UI.startHud(); if (!S.dayStarting) UI.nightCard(n);
   SFX.jingle();
+}
+
+/* ---------- day visit (peaceful) ---------- */
+let npcs = [];
+function clearNpcs() { npcs.forEach(n => { scene.remove(n.m.g); if (n.label) scene.remove(n.label); }); npcs = []; }
+function mkNpc(o) {
+  const n = Object.assign({ ty: 'bot', h: 0, st: 'walk', path: null, pi: 0, gf: o.f, gx: o.x, gz: o.z, padLock: false, idleT: 0, li: 0, talkT: 0, spd: 0, px: o.x, pz: o.z, sc: 1 }, o);
+  n.m = GFX.mkPlayer(o.ci === undefined ? (Math.random() * 4) | 0 : o.ci); n.m.g.scale.setScalar(n.sc); scene.add(n.m.g);
+  if (o.name) { n.label = nameLabel(o.name, true); scene.add(n.label); }
+  npcs.push(n); return n;
+}
+function startDay() {
+  S.dayStarting = true; S.solo = true; S.roles = {}; startNight(1, (Math.random() * 1e6) | 0); S.dayStarting = false;
+  S.day = true; S.time = 0; S.power = 100; S.over = false;
+  S.bots.forEach(b => { scene.remove(b.m.g); scene.remove(b.label); }); S.bots = []; S.H.vis = false;
+  S.items.forEach((it, i) => { if (it.type !== 'skate') { it.taken = true; if (itemMeshes[i]) itemMeshes[i].visible = false; } });
+  nightMeshes.forEach(m => scene.remove(m)); nightMeshes = []; S.panels = []; S.poster = null;
+  W.sdoors.forEach(d => d.open = true);
+  S.an.forEach((a, k) => { if (a.ty === 'higante') { a.f = 3; a.st = 'dormant'; a.act = 1e9; return; } const st = W.stage[k]; a.f = 2; a.x = a.tx = st.x; a.z = a.tz = st.z; a.h = 0; a.st = 'show'; a.act = 1e9; });
+  const D2 = STORY.day, R = Math.random;
+  // clerks
+  const cn = D2.clerkNames.slice(); let ci = 0;
+  for (const name in D2.clerks) { const r = W.rooms.find(q => q.name === name), sp = r && W.spots.find(q => q.room === r.id); if (!sp) continue;
+    mkNpc({ kind: 'clerk', name: cn[ci++ % cn.length], shop: name, f: sp.f, x: sp.x - sp.dx * 0.75, z: sp.z - sp.dz * 0.75, h: Math.atan2(-sp.dx, -sp.dz), st: 'stand', lines: D2.clerks[name], ci: ci % 4 }); }
+  mkNpc({ kind: 'guard', name: 'Kuya Bert', f: 2, x: C(24.4), z: C(58.4), h: Math.atan2(W.spawn.x - C(24.4), W.spawn.z - C(58.4)), st: 'stand', lines: D2.bert, ci: 1 });
+  mkNpc({ kind: 'lolo', name: 'Lolo', f: 2, x: C(36.8), z: C(37.6), h: Math.PI * 0.75, st: 'stand', lines: D2.lolo, ci: 3, sc: 0.95 });
+  for (let i = 0; i < 6; i++) mkNpc({ kind: 'kid', name: '', f: 2, x: C(40.3 + i * 0.75), z: C(37.2 + (i % 2) * 0.6), h: Math.PI, st: 'watch', lines: D2.kid, sc: 0.65 });
+  for (let i = 0; i < 3; i++) { const [x, z] = poiXZ(3); mkNpc({ kind: 'kid', name: '', f: 3, x, z, st: 'walk', lines: D2.kid, sc: 0.65, fast: 1 }); }
+  const per = [3, 9, 9, 8]; per.forEach((n, f) => { for (let i = 0; i < n; i++) { const [x, z] = poiXZ(f); mkNpc({ kind: 'shopper', name: '', f, x, z, st: 'walk', lines: D2.shopper, idleT: R() * 4 }); } });
+  S.mode = 'play'; showFloor(P.f); UI.startHud(); UI.dayCard();
+}
+function dayTick(dt) {
+  S.time += dt;
+  for (const n of npcs) {
+    if (n.talkT > 0) { n.talkT -= dt; let dh = Math.atan2(P.x - n.x, P.z - n.z) - n.h; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); n.h += dh * Math.min(1, dt * 6); continue; }
+    if (n.st !== 'walk') continue;
+    if (n.idleT > 0) { n.idleT -= dt; continue; }
+    if (!n.path || n.pi >= n.path.length) { if (n.path) { n.path = null; n.idleT = 1.5 + Math.random() * 5; continue; } const f = n.kind === 'kid' ? n.f : (Math.random() < 0.8 ? n.f : (Math.random() * 4) | 0), [x, z] = poiXZ(f); planTo(n, f, x, z); }
+    moveAn(n, dt, n.fast ? 2.4 : 1.25, null);
+  }
+  // passport stamps
+  const zn = W.zone(P.f, P.x, P.z);
+  for (const [name, f] of STORY.day.stamps) if (zn === name && P.f === f && !SAVE.passport.includes(name)) {
+    SAVE.passport.push(name); saveGame(); SFX.good(); const got = SAVE.passport.length, tot = STORY.day.stamps.length;
+    UI.toast(got >= tot ? 'Mall passport complete! You know Gabriel Mall by heart.' : 'Passport stamp: ' + name + ' (' + got + '/' + tot + ')', 2600);
+  }
+}
+function nearNpc() { let best = null, bd = 1.9; for (const n of npcs) { if (n.f !== P.f) continue; const d = Math.hypot(n.x - P.x, n.z - P.z); if (d < bd) { bd = d; best = n; } } return best; }
+function talkTo(n) { const line = n.lines[n.li++ % n.lines.length]; n.talkT = 4.5; SFX.ui(); UI.say(n.name || (n.kind === 'kid' ? 'Bata' : 'Shopper'), line + (n.kind === 'clerk' ? '' : '')); }
+function npcVisuals(dt, t) {
+  for (const n of npcs) {
+    n.spd = Math.hypot(n.x - n.px, n.z - n.pz) / Math.max(dt, 1e-4); n.px = n.x; n.pz = n.z;
+    const vis = n.f === S.viewF && S.mode !== 'cut'; n.m.g.visible = vis; n.m.g.position.set(n.x, 0, n.z); n.m.g.rotation.y = n.h + Math.PI;
+    GFX.animPlayer(n.m, dt, n.spd, false, false, false);
+    if (n.st === 'watch' && n.talkT <= 0) { n.m.arms.forEach((a, i) => a.rotation.x = -1.2 + Math.sin(t * 6 + i * 3 + n.x) * 0.5); n.m.body.position.y = Math.abs(Math.sin(t * 5 + n.x)) * 0.05; }
+    if (n.label) { n.label.visible = vis && Math.hypot(n.x - P.x, n.z - P.z) < 12; n.label.position.set(n.x, 2.05 * n.sc + 0.1, n.z); }
+  }
 }
 
 /* ---------- mall-goer bots ---------- */
@@ -14600,6 +14696,15 @@ function bantayUpdate(dt, PL) {
   }
   if (H.giftT <= 0 && H.f === p.f && d < 16) { H.giftT = 85 + Math.random() * 40; const type = S.power < 45 ? 'fuse' : 'battery'; hostEv({ k: 'gift', it: { id: S.items.length, type, f: H.f, x: H.x, z: H.z, taken: false, name: 'Bantay\u2019s gift' } }); }
   if (S.power <= 0 && !H.pw) { H.pwT += dt; if (H.pwT > 6) { H.pw = true; S.power = 10; S.black = false; hostEv({ k: 'bpower' }); } }
+}
+
+/* ---------- navigator ping beacons ---------- */
+const beacons = [];
+function beaconUpdate(t) {
+  const live = S.pings.filter(p => S.time - p.t < 20 && p.f === S.viewF && S.mode !== 'cctv');
+  while (beacons.length < live.length) { const g = new THREE.Group(); const cv = document.createElement('canvas'); cv.width = 128; cv.height = 128; const c = cv.getContext('2d'); c.fillStyle = '#63ffb0'; c.beginPath(); c.moveTo(64, 120); c.lineTo(24, 50); c.lineTo(104, 50); c.closePath(); c.fill(); c.beginPath(); c.arc(64, 40, 30, 0, 7); c.fill(); c.fillStyle = '#0d141c'; c.beginPath(); c.arc(64, 40, 13, 0, 7); c.fill();
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, transparent: true })); sp.scale.set(0.9, 0.9, 1); g.add(sp); const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 4, 8, 1, true), new THREE.MeshBasicMaterial({ color: 0x63ffb0, transparent: true, opacity: 0.25, depthWrite: false })); beam.position.y = -0.6; g.add(beam); g.userData.sp = sp; scene.add(g); beacons.push(g); }
+  beacons.forEach((g, i) => { const p = live[i]; g.visible = !!p && Math.hypot(p.x - P.x, p.z - P.z) > 3; if (!g.visible) return; const age = S.time - p.t; g.position.set(p.x, 1.4 + Math.sin(t * 3) * 0.15, p.z); const d = Math.hypot(p.x - P.x, p.z - P.z); g.userData.sp.scale.setScalar(Math.max(0.6, Math.min(2.2, d * 0.08))); g.userData.sp.material.opacity = 1 - age / 20; });
 }
 
 /* ---------- easter-egg weapons ---------- */
@@ -14712,6 +14817,12 @@ function onEv(e) {
   else if (e.k === 'gift') { if (!S.items[e.it.id]) { S.items[e.it.id] = e.it; itemMeshes[e.it.id] = itemMesh(e.it); itemMeshes[e.it.id].visible = e.it.f === S.viewF; } }
   else if (e.k === 'bpower') { SFX.bark(0.4); UI.toast('The lights flicker back on\u2026 (+10% power)'); UI.radio('???', '*arf!*'); }
   else if (e.k === 'confetti') { if (e.f === S.viewF) spawnConfetti(e.f, e.x, e.z, e.h); SFX.pop(); }
+  else if (e.k === 'nav') {
+    const was = S.navId === pid() && e.id !== pid(); S.navId = e.id; UI.roleRefresh(); SFX.chime(1);
+    if (e.id === pid()) { UI.toast('YOUR TURN TO NAVIGATE! Get to a CCTV room.', 3500); UI.radio('Switch', 'You are the Navigator now. Hide in any CCTV room, use the cameras and map, and ping spots for your team.'); }
+    else { if (was || S.mode === 'cctv') { if (S.mode === 'cctv') exitCCTV(); UI.closePanels(); UI.toast('SWITCH! Leave the CCTV room and explore.', 3500); } UI.radio('Switch', UI.name(e.id) + ' is the Navigator now' + (e.why === 'caught' ? ' (the last one got zipped into a suit!)' : '') + '. Follow their pings.'); }
+  }
+  else if (e.k === 'navwarn') { UI.toast(S.navId === pid() ? 'Switch in 10 seconds \u2014 get ready to leave!' : 'Switch in 10 seconds!', 2200); }
   else if (e.k === 'stun') { const a = S.an[e.a]; if (a && a.f === S.viewF) SFX.zap(); }
   else if (e.k === 'boss') { SAVE.bossSeen = true; saveGame(); SFX.boss(); if (S.solo && !S.bossCut && S.mode === 'play') { S.bossCut = true; playCut('boss'); } else UI.toast('Ang Higante has come down from the rooftop\u2026', 3500); UI.radio('Kuya Bert', 'Ano \u2019yon?! Something huge on the 2nd floor. Flashlights won\u2019t work on it. Use camera flashes \u2014 and RUN.'); }
   else if (e.k === 'snort') { const a = S.an[e.a]; if (a && a.f === S.viewF) { SFX.snort(); if (Math.hypot(a.x - P.x, a.z - P.z) < 16) UI.toast('Kardong is about to CHARGE! Step aside!', 1600); } }
@@ -14869,6 +14980,7 @@ function moveAn(a, dt, spd, PL) {
   }
 }
 function hostTick(dt) {
+  if (S.day) { dayTick(dt); return; }
   if (S.over || S.ending) return;
   S.time += dt;
   const closed = W.doors.filter(d => d.closed).length, cctvUsers = players().filter(p => p.cm >= 0).length;
@@ -14879,7 +14991,8 @@ function hostTick(dt) {
   const need = PANELS_NEEDED[S.night - 1], done = S.panels.filter(q => q.done).length;
   if (S.time >= 6 * SAVE.set.hour && done < need) { S.time = 6 * SAVE.set.hour - 0.05; if (!S.stall) { S.stall = true; hostEv({ k: 'stall', need, done }); } }
   const h = Math.floor(S.time / SAVE.set.hour);
-  if (h > S.hour) { S.hour = h; if (h >= 6) hostEv({ k: 'win' }); else hostEv({ k: 'hour', h }); }
+  if (h > S.hour) { S.hour = h; if (h >= 6) hostEv({ k: 'win' }); else { hostEv({ k: 'hour', h }); if (!S.solo) rotateNav('turn'); } }
+  if (!S.solo) { const rem = SAVE.set.hour - (S.time % SAVE.set.hour); if (rem < 10 && !S.navWarned && S.hour < 5) { S.navWarned = true; hostEv({ k: 'navwarn' }); } if (S.navId && S.suited.has(S.navId) && players().some(p => !S.suited.has(p.id))) rotateNav('caught'); }
   if (!S.solo) { S.syncT -= dt; if (S.syncT <= 0) { S.syncT = 0.16; NET.emit('st', packState()); } }
 }
 function projUpdate(dt) {
@@ -14894,7 +15007,7 @@ function projUpdate(dt) {
 function heatUpdate(dt) {
   const PL = players().filter(p => !p.su);
   for (const r of W.cctv) {
-    const occ = S.power > 0 && PL.some(p => p.f === r.f && inSafe(p) && roomAt(p.f, p.x, p.z) === r);
+    const inside = PL.filter(p => p.f === r.f && inSafe(p) && roomAt(p.f, p.x, p.z) === r), occ = S.power > 0 && inside.some(p => S.solo || p.id !== S.navId);
     r.heat = Math.max(0, Math.min(LOCK_HEAT + 1, r.heat + (occ ? dt : -dt * 0.5)));
     if (occ && !r.warned && r.heat > LOCK_HEAT - 10) { r.warned = true; hostEv({ k: 'heatwarn', r: r.id }); }
     if (!r.hot && r.heat >= LOCK_HEAT) { r.hot = true; hostEv({ k: 'hot', r: r.id }); }
@@ -14917,11 +15030,12 @@ function fireRocket(a) {
 }
 function packState() {
   return { ep: S.epoch, n: S.night, t: Math.round(S.time * 10) / 10, pw: Math.round(S.power * 10) / 10, d: W.doors.map(d => d.closed ? 1 : d.jam > 0 ? 2 : 0).join(''), it: S.items.map(i => i.taken ? 1 : 0).join(''), su: [...S.suited], g: S.genUsed ? 1 : 0,
-    bt: S.bots.map(b => [b.f, Math.round(b.x * 20) / 20, Math.round(b.z * 20) / 20, Math.round(b.h * 100) / 100, b.su ? 1 : 0]), hb: S.H ? [S.H.f, Math.round(S.H.x * 20) / 20, Math.round(S.H.z * 20) / 20, Math.round(S.H.h * 100) / 100, S.H.vis ? 1 : 0] : null, pn: S.panels.map(q => q.done ? 1 : 0).join(''), pu: S.pianoUsed ? 1 : 0, sd: W.sdoors.map(d => d.open ? 1 : 0).join(''), ch: W.cctv.map(r => Math.round(r.heat) * (r.hot ? -1 : 1)), stl: S.stall ? 1 : 0,
+    bt: S.bots.map(b => [b.f, Math.round(b.x * 20) / 20, Math.round(b.z * 20) / 20, Math.round(b.h * 100) / 100, b.su ? 1 : 0]), hb: S.H ? [S.H.f, Math.round(S.H.x * 20) / 20, Math.round(S.H.z * 20) / 20, Math.round(S.H.h * 100) / 100, S.H.vis ? 1 : 0] : null, pn: S.panels.map(q => q.done ? 1 : 0).join(''), pu: S.pianoUsed ? 1 : 0, nv: S.navId || '', sd: W.sdoors.map(d => d.open ? 1 : 0).join(''), ch: W.cctv.map(r => Math.round(r.heat) * (r.hot ? -1 : 1)), stl: S.stall ? 1 : 0,
     an: S.an.map(a => [a.f, Math.round(a.x * 20) / 20, Math.round(a.z * 20) / 20, Math.round(a.h * 100) / 100, ST_CODE.indexOf(a.st), (S.time - a.spot < 8) ? 1 : 0, a.frozen ? 1 : 0, a.scary ? 1 : 0]) };
 }
 function applyState(s) {
   if (s.ep !== S.epoch || S.mode === 'menu') return;
+  if (s.nv !== undefined && s.nv !== S.navId) { S.navId = s.nv; UI.roleRefresh(); }
   S.time = s.t; S.hour = Math.floor(s.t / SAVE.set.hour); S.power = s.pw; S.black = s.pw <= 0; S.genUsed = !!s.g;
   for (let i = 0; i < W.doors.length; i++) { const v = +s.d[i]; W.doors[i].closed = v === 1; W.doors[i].jam = v === 2 ? 1 : 0; }
   for (let i = 0; i < S.items.length; i++) if (s.it[i] === '1' && !S.items[i].taken) { S.items[i].taken = true; if (itemMeshes[i]) itemMeshes[i].visible = false; }
@@ -14974,10 +15088,15 @@ function interactions(dt) {
   let pr = null;
   if (S.mode !== 'play' || P.suited || UI.screenOpen()) { UI.prompt(null); P.hold = 0; usePressed = false; return; }
   const ci = cidx(P.x, P.z);
+  // day: talk to people
+  if (S.day) { const n = nearNpc(); if (n) pr = { t: 'Talk to ' + (n.name || (n.kind === 'kid' ? 'the kid' : 'the shopper')), fn: () => talkTo(n) }; }
   // rescue
   if (!S.solo) for (const id of S.suited) { if (id === pid()) continue; const r = remotes.get(id); if (r && r.f === P.f && Math.hypot(r.x - P.x, r.z - P.z) < 1.6) { pr = { t: 'Hold to unzip ' + UI.name(id), hold: 2.5, fn: () => act({ a: 'rescue', id }) }; break; } }
   if (!pr) for (const b of S.bots) if (b.su && b.f === P.f && Math.hypot(b.x - P.x, b.z - P.z) < 1.6) { pr = { t: 'Hold to unzip ' + b.name, hold: 2.5, fn: () => act({ a: 'freebot', i: b.i }) }; break; }
   // firework crate (easter egg)
+  if (!pr && S.day && ((CRATE.spot && P.f === 3 && Math.hypot(CRATE.m.position.x - P.x, CRATE.m.position.z - P.z) < 1.9) || (LOCKER.spot && P.f === 2 && Math.hypot(LOCKER.m.position.x - P.x, LOCKER.m.position.z - P.z) < 1.8))) pr = { t: 'Staff only during mall hours', fn: () => { } };
+  if (!pr && S.day && P.f === 2 && Math.hypot(PIANO.x - P.x, PIANO.z - P.z) < 1.9) pr = { t: 'Play the toy piano for the crowd', fn: () => UI.puzzleJingle(() => { UI.toast('The kids clap along! Bravo!'); SFX.win(); }, () => { }) };
+  if (!pr && S.day) { const g = W.rooms.find(r => r.gen); if (g && P.f === 0 && Math.hypot(g.gen.x - P.x, g.gen.z - P.z) < 2.2) pr = { t: 'The backup generator (used in blackouts)', fn: () => { } }; }
   if (!pr && CRATE.spot && P.f === 3 && Math.hypot(CRATE.m.position.x - P.x, CRATE.m.position.z - P.z) < 1.9) pr = S.crateUsed ? { t: 'The crate is empty tonight', fn: () => { } } : { t: 'A locked crate with a keypad', fn: () => UI.puzzleKeypad(CRATE_CODE, grantKwitis, 'The lid says: \u201cMall Est. _ _ _ _\u201d', 'PAPUTOK crate') };
   // locker (easter egg)
   if (!pr && LOCKER.spot && P.f === 2 && Math.hypot(LOCKER.m.position.x - P.x, LOCKER.m.position.z - P.z) < 1.8) pr = S.lockerUsed ? { t: 'The locker is empty tonight', fn: () => { } } : { t: 'Locked locker \u2014 show a claim ticket to the camera', fn: () => UI.lockerScan() };
@@ -14986,7 +15105,7 @@ function interactions(dt) {
   // toy piano
   if (!pr && P.f === 2 && Math.hypot(PIANO.x - P.x, PIANO.z - P.z) < 1.9) pr = S.pianoUsed ? { t: 'The Barkada already heard the lullaby', fn: () => { } } : { t: 'Play the Barkada lullaby on the toy piano', fn: () => UI.puzzleJingle(() => act({ a: 'lullaby' }), () => act({ a: 'noise', f: 2, x: PIANO.x, z: PIANO.z, r: 14 })) };
   // console
-  if (!pr) for (const r of W.cctv) if (r.f === P.f && r.console && Math.hypot(r.console.x - P.x, r.console.z - P.z) < 1.7) { pr = role().cctv ? { t: S.power > 0 ? 'Use CCTV monitor' : 'CCTV is dead (no power)', fn: () => { if (S.power > 0) enterCCTV(r); } } : { t: 'Only the Mata can work the cameras', fn: () => { } }; break; }
+  if (!pr) for (const r of W.cctv) if (r.f === P.f && r.console && Math.hypot(r.console.x - P.x, r.console.z - P.z) < 1.7) { pr = role().cctv ? { t: S.power > 0 ? 'Use CCTV monitor' : 'CCTV is dead (no power)', fn: () => { if (S.power > 0) enterCCTV(r); } } : { t: 'Only the Navigator can use the cameras \u2014 wait for your turn', fn: () => { } }; break; }
   // generator
   if (!pr) { const g = W.rooms.find(r => r.gen); if (g && P.f === 0 && Math.hypot(g.gen.x - P.x, g.gen.z - P.z) < 2.2) pr = S.genUsed ? { t: 'Generator already used tonight', fn: () => { } } : { t: 'Type the generator code (+25%)', fn: () => UI.puzzleKeypad(S.gcode, () => act({ a: 'gen' })) }; }
   // stairs
@@ -15063,7 +15182,7 @@ function scareUpdate(dt) {
 
 /* ---------- win / lose ---------- */
 function winNight() {
-  if (S.mode === 'menu' || S.over) return; S.over = true; SFX.win(); SFX.chime(6);
+  if (S.mode === 'menu' || S.over || S.day) return; S.over = true; SFX.win(); SFX.chime(6);
   if (S.mode === 'drone') droneOff(); if (S.mode === 'cctv') exitCCTV();
   const n = S.night; SAVE.nights = Math.max(SAVE.nights, Math.min(5, n + 1)); if (n === 5) SAVE.won = true;
   const st = { survive: true, tape: S.stats.tape || SAVE.tapes.includes(n), puzzle: S.stats.puzzles > 0, help: S.stats.freed > 0 || S.bots.some(b => !b.su) };
@@ -15098,6 +15217,7 @@ function visuals(dt, t) {
     if (dg.g.visible && !SAVE.bantay && S.mode === 'play' && H.f === P.f && eyeSees(P.f, P.x, P.z, -Math.sin(P.h), -Math.cos(P.h), H, 0.9, 14)) { SAVE.bantay = true; saveGame(); UI.toast('Was that\u2026 a dog with blue eyes?', 3000); } } }
   nightMeshes.forEach(m => m.visible = m.userData.f === S.viewF);
   sdMeshes.forEach((m, i) => { const d = W.sdoors[i]; if (d.f !== S.viewF) return; const tgt = d.open ? 1 : 0; if (Math.abs(m.v - tgt) > 0.001) { m.v += (tgt - m.v) * Math.min(1, dt * 7); m.halves.forEach(h => h.hinge.rotation.y = h.open * m.v); } });
+  beaconUpdate(t);
   for (let i = rocketsFx.length - 1; i >= 0; i--) { const r = rocketsFx[i]; r.t += dt; r.m.visible = r.f === S.viewF;
     if (r.type === 'cym') { r.m.position.x += r.vx * dt; r.m.position.z += r.vz * dt; r.m.rotation.y += dt * 20; r.m.rotation.x = 0.4; const ti = tAt(r.f, r.m.position.x, r.m.position.z); if (r.t > 2 || ti === T_WALL || ti === T_VENT) { scene.remove(r.m); rocketsFx.splice(i, 1); } }
     else { const k = Math.min(1, r.t * 24 / Math.max(0.1, r.d)); r.m.position.set(r.s[0] + (r.e[0] - r.s[0]) * k, r.s[1] + (r.e[1] - r.s[1]) * k, r.s[2] + (r.e[2] - r.s[2]) * k); if (k >= 1) { scene.remove(r.m); rocketsFx.splice(i, 1); if (r.f === S.viewF) { spawnBurst(r.e); const dd = Math.hypot(r.e[0] - P.x, r.e[2] - P.z); SFX.boom(Math.max(0.2, 1 - dd / 30)); if (dd < 12) S.shake = Math.max(S.shake, 0.6 * (1 - dd / 12)); } } } }
@@ -15112,7 +15232,9 @@ function visuals(dt, t) {
   itemMeshes.forEach((m, i) => { if (!m.visible) return; m.rotation.y += dt * 1.6; m.position.y = 0.5 + Math.sin(t * 2 + i) * 0.08; });
   // lights / blackout
   const black = S.power <= 0, fl = floorsG[S.viewF];
-  if (fl) { const flick = black ? 0.05 : (S.flick > 0 && Math.random() < S.flick * 0.6) ? Math.random() * 0.3 : (Math.random() < 0.004 ? 0.25 : 0.85); fl.userData.lampMat.color.setScalar(flick); fl.userData.glowMat.color.setScalar(black ? 0.15 : 0.9); fl.userData.signMat.color.setScalar(black ? 0.12 : 0.8); }
+  if (S.day) npcVisuals(dt, t);
+  if (S.day && fl) { fl.userData.lampMat.color.setScalar(1); fl.userData.glowMat.color.setScalar(1); fl.userData.signMat.color.setScalar(1); stageLight.intensity = S.viewF === 2 ? 1.4 : 0; }
+  else if (fl) { const flick = black ? 0.05 : (S.flick > 0 && Math.random() < S.flick * 0.6) ? Math.random() * 0.3 : (Math.random() < 0.004 ? 0.25 : 0.85); fl.userData.lampMat.color.setScalar(flick); fl.userData.glowMat.color.setScalar(black ? 0.15 : 0.9); fl.userData.signMat.color.setScalar(black ? 0.12 : 0.8); }
   P.model.g.visible = (P.view === 'tp' || S.mode === 'drone' || (S.mode === 'cctv' && S.viewF === P.f) || P.suited) && P.f === S.viewF;
   P.model.g.position.set(P.x, P.riding ? 0.12 : 0, P.z); P.model.g.rotation.y = P.h + Math.PI;
   GFX.animPlayer(P.model, dt, P.riding ? 0 : P.sp, P.cr, P.mask, P.suited);
@@ -15120,6 +15242,7 @@ function visuals(dt, t) {
 }
 function animAnim(a, dt, t) {
   const mode = a.st === 'stun' ? 1 : (a.ty === 'pusa' && a.frozen) || a.st === 'dormant' ? 2 : a.st === 'chase' ? 3 : 0;
+  if (a.st === 'show') { const m = a.m, b = t * 4 + a.k * 1.3; m.eyeMat.color.copy(m.eyeCol); m.glow.material.opacity = 0.6; m.g.position.y = 0.14 + Math.abs(Math.sin(b)) * 0.12; m.g.rotation.y = Math.sin(t * 1.2 + a.k) * 0.5; m.arms.forEach((r, i) => r.rotation.x = -1.6 + Math.sin(b + i * Math.PI) * 0.9); m.legs.forEach((l, i) => l.rotation.x = Math.sin(b + i * Math.PI) * 0.25); m.head.rotation.set(0, Math.sin(b * 0.5) * 0.4, Math.sin(b) * 0.15); if (m.mouth) m.mouth.visible = m.teeth.visible = false; m.body.scale.y = 1; return; }
   if (a.ty === 'higante') { a.m.g.visible = a.m.g.visible && a.st !== 'dormant'; GFX.animHigante(a.m, dt, t, a.spd, mode); return; }
   if (a.st === 'dormant') { a.m.eyeMat.color.setScalar(S.mode === 'menu' ? 1 : 0.35); a.m.glow.material.opacity = S.mode === 'menu' ? 0.9 : 0.15; a.m.head.rotation.set(0.15, 0, 0); return; }
   if (a.st === 'windup' || a.st === 'charge') { GFX.animAn(a.m, dt, t, a.st === 'charge' ? 8 : 0.6, 3); a.m.head.rotation.x = 0.55 + (a.st === 'windup' ? Math.sin(t * 40) * 0.08 : 0); a.m.arms.forEach(r => r.rotation.x = 0.3); return; }
@@ -15131,7 +15254,7 @@ function listener() { if (S.mode === 'drone') return { f: D.f, x: D.x, z: D.z, h
 
 /* ---------- camera ---------- */
 function placeCamera(dt) {
-  amb.intensity = 0.34; hemi.intensity = 0.3; scene.fog.density = 0.05; cam.fov = P.mask ? 62 : 72;
+  amb.intensity = S.day ? 0.95 : 0.34; hemi.intensity = S.day ? 0.75 : 0.3; scene.fog.density = S.day ? 0.012 : 0.05; cam.fov = P.mask ? 62 : 72;
   if (S.mode === 'cctv') {
     const c = CAMS[S.camIdx]; showFloor(c.f); cam.fov = 78; cam.position.set(c.x, c.y, c.z); cam.rotation.set(-0.36, c.h + Math.PI, 0);
     amb.intensity = 0.9; hemi.intensity = 0.7; scene.fog.density = 0.022; flash.intensity = 0; lantern.intensity = 0;
@@ -15171,7 +15294,7 @@ function nameLabel(txt, solid) {
 function netUpdate(dt) {
   if (S.solo || !NET.nr) return;
   S.presT -= dt;
-  if (S.presT <= 0) { S.presT = 0.1; NET.pres({ ep: S.epoch, f: P.f, x: Math.round(P.x * 100) / 100, z: Math.round(P.z * 100) / 100, h: Math.round(P.h * 100) / 100, p: Math.round(P.p * 100) / 100, fl: P.flash && P.bat > 0 ? 1 : 0, mk: P.mask ? 1 : 0, sp: Math.round(P.sp * 10) / 10, cr: P.cr ? 1 : 0, cm: S.mode === 'cctv' ? S.camIdx : -1, dr: D.on ? [Math.round(D.x * 10) / 10, Math.round(D.z * 10) / 10, Math.round(D.h * 100) / 100] : null, lt: P.gold ? 2.5 : (role().light || 1), sh: P.shieldT > 0 ? 1 : 0, r: S.roles[pid()] || '' }); }
+  if (S.presT <= 0) { S.presT = 0.1; NET.pres({ ep: S.epoch, f: P.f, x: Math.round(P.x * 100) / 100, z: Math.round(P.z * 100) / 100, h: Math.round(P.h * 100) / 100, p: Math.round(P.p * 100) / 100, fl: P.flash && P.bat > 0 ? 1 : 0, mk: P.mask ? 1 : 0, sp: Math.round(P.sp * 10) / 10, cr: P.cr ? 1 : 0, cm: S.mode === 'cctv' ? S.camIdx : -1, dr: D.on ? [Math.round(D.x * 10) / 10, Math.round(D.z * 10) / 10, Math.round(D.h * 100) / 100] : null, lt: P.gold ? 2.5 : (role().light || 1), sh: P.shieldT > 0 ? 1 : 0, r: S.navId === pid() ? 'nav' : 'exp' }); }
   const seen = new Set();
   NET.others().forEach((p, i) => {
     const q = p.presence; if (!q || q.ep !== S.epoch || q.f === undefined) return; seen.add(p.peer);
@@ -15190,20 +15313,27 @@ function setupNetHandlers() {
   NET.on.ev = (d) => { if (!NET.host) onEv(d); };
   NET.on.act = (d, m) => { if (NET.host && S.mode !== 'menu') applyAct(d, m.peer); };
   NET.on.radio = (d, m) => { if (d.ep !== S.epoch && d.ep !== undefined) return; UI.radio(d.n || 'Team', d.m, d.p); SFX.radio(); };
-  NET.on.start = (d) => { if (NET.host) return; if (d.ep === S.epoch && S.mode !== 'menu') { S.roles = d.roles; return; } UI.closeScreens(); S.solo = false; S.epoch = d.ep - 1; startNight(d.n, d.seed, d.roles, d.t); S.epoch = d.ep; };
+  NET.on.start = (d) => { if (NET.host) return; S.navOrder = d.nav || []; S.navId = d.navId; if (d.ep === S.epoch && S.mode !== 'menu') { UI.roleRefresh(); return; } UI.closeScreens(); S.solo = false; S.epoch = d.ep - 1; startNight(d.n, d.seed, null, d.t); S.epoch = d.ep; };
   NET.on.end = () => { if (!NET.host) UI.toMenu(); };
   NET.on.lost = () => { if (S.mode !== 'menu' && !S.solo) { UI.toast('Lost the connection to the host', 3000); setTimeout(() => { S.solo = true; NET.leave(); UI.toMenu(); }, 1500); } };
-  NET.on.peers = (ch) => { UI.lobbyRefresh && UI.lobbyRefresh(); if (NET.host && S.mode !== 'menu' && ch.joined.some(p => !p.isMe)) { assignRoles(); NET.emit('start', { ep: S.epoch, n: S.night, seed: S.seed, roles: S.roles, t: S.time }); } };
+  NET.on.peers = (ch) => { UI.lobbyRefresh && UI.lobbyRefresh(); if (NET.host && S.mode !== 'menu' && ch.joined.some(p => !p.isMe)) { assignRoles(); NET.emit('start', { ep: S.epoch, n: S.night, seed: S.seed, nav: S.navOrder, navId: S.navId, t: S.time }); } };
 }
+/* Co-op turns: one Navigator hides in a CCTV room with the map and cameras, the others explore.
+   The Navigator role passes to the next player every in-game hour. */
 function assignRoles() {
-  const ids = [NET.me].concat(NET.others().map(p => p.peer));
-  const used = new Set(); ids.forEach(id => { if (S.roles[id]) used.add(S.roles[id]); });
-  ids.forEach(id => { if (!S.roles[id]) { const r = ROLE_ORDER.find(x => !used.has(x)) || ROLE_ORDER[ids.indexOf(id) % 4]; S.roles[id] = r; used.add(r); } });
+  const ids = [NET.me].concat(NET.others().map(p => p.peer)), alive = new Set(ids);
+  S.navOrder = (S.navOrder || []).filter(id => alive.has(id)); ids.forEach(id => { if (!S.navOrder.includes(id)) S.navOrder.push(id); });
+}
+function rotateNav(why) {
+  const order = S.navOrder || []; if (!order.length) return; let i = order.indexOf(S.navId);
+  for (let k = 1; k <= order.length; k++) { const id = order[(i + k) % order.length]; if (!S.suited.has(id)) { S.navId = id; break; } }
+  S.navWarned = false; hostEv({ k: 'nav', id: S.navId, why: why || 'turn' });
 }
 function hostStart(n) {
-  S.roles = {}; assignRoles(); const seed = (Math.random() * 1e6) | 0;
+  assignRoles(); const seed = (Math.random() * 1e6) | 0;
   S.solo = false; S.epoch = (S.epoch | 0) + 1; const ep = S.epoch + 1;
-  startNight(n, seed, S.roles, 0); S.epoch = ep; NET.emit('start', { ep, n, seed, roles: S.roles, t: 0 });
+  S.navId = S.navOrder[0];
+  startNight(n, seed, S.roles, 0); S.epoch = ep; NET.emit('start', { ep, n, seed, nav: S.navOrder, navId: S.navId, t: 0 });
 }
 
 /* ---------- cutscenes ---------- */
@@ -15323,6 +15453,7 @@ function audioUpdate(dt) {
   if (!SFX.ready) return; let near = 0; const L = listener();
   if (S.mode !== 'menu' && !S.over) for (const a of S.an) { if (a.f !== L.f || a.st === 'dormant') continue; const d = Math.hypot(a.x - P.x, a.z - P.z); if (a.f === P.f) near = Math.max(near, Math.pow(CL(1 - d / 17, 0, 1), 1.4)); }
   SFX.static(near * 0.2 + (S.mode === 'cctv' ? 0.015 : 0)); S.near = near;
+  if (S.day) { near = 0; SFX.static(0); S.near = 0; S.muzT = (S.muzT || 0) - dt; if (S.muzT <= 0 && S.mode === 'play') { S.muzT = 9; if (P.f === 2 && Math.hypot(P.x - C(42), P.z - C(34)) < 20) SFX.jingle(); } SFX.hum(0.02); return; }
   S.hbT -= dt; if (near > 0.35 && S.hbT <= 0 && S.mode !== 'menu' && !S.over) { SFX.heart(Math.min(1, near)); S.hbT = 1.15 - near * 0.55; } SFX.hum(S.power > 0 && S.mode !== 'menu' ? 0.05 : 0.015);
 }
 
