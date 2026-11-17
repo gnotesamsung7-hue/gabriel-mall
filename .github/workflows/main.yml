@@ -44,13 +44,18 @@ jobs:
 
       - name: App icon
         run: |
-          R=android/app/src/main/res
-          for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
-            n=${d%%:*}; s=${d##*:}
-            convert icon.png -resize ${s}x${s} $R/mipmap-$n/ic_launcher.png
-            cp $R/mipmap-$n/ic_launcher.png $R/mipmap-$n/ic_launcher_round.png
-          done
-          rm -rf $R/mipmap-anydpi-v26
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from PIL import Image
+          R = 'android/app/src/main/res'
+          src = Image.open('icon.png').convert('RGBA')
+          for n, s in [('mdpi', 48), ('hdpi', 72), ('xhdpi', 96), ('xxhdpi', 144), ('xxxhdpi', 192)]:
+              im = src.resize((s, s), Image.LANCZOS)
+              im.save(f'{R}/mipmap-{n}/ic_launcher.png')
+              im.save(f'{R}/mipmap-{n}/ic_launcher_round.png')
+          print('icons done')
+          PY
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26
 
       - name: Build APK
         run: |
