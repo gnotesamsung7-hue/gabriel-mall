@@ -55,16 +55,30 @@ jobs:
         run: |
           python3 -m pip install --quiet pillow
           python3 - <<'PY'
-          from PIL import Image
+          from PIL import Image, ImageDraw
+          import os
           R = 'android/app/src/main/res'
-          src = Image.open('icon.png').convert('RGBA')
+          full = Image.open('icon.png').convert('RGBA')
+          fg = Image.open('icon_fg.png').convert('RGBA') if os.path.exists('icon_fg.png') else full
           for n, s in [('mdpi', 48), ('hdpi', 72), ('xhdpi', 96), ('xxhdpi', 144), ('xxxhdpi', 192)]:
-              im = src.resize((s, s), Image.LANCZOS)
-              im.save(f'{R}/mipmap-{n}/ic_launcher.png')
-              im.save(f'{R}/mipmap-{n}/ic_launcher_round.png')
+              d = f'{R}/mipmap-{n}'
+              os.makedirs(d, exist_ok=True)
+              full.resize((s, s), Image.LANCZOS).save(f'{d}/ic_launcher.png')
+              # round legacy icon: centre of the padded art, cut to a circle
+              big = fg.resize((s * 3 // 2, s * 3 // 2), Image.LANCZOS)
+              o = (big.width - s) // 2
+              r = big.crop((o, o, o + s, o + s))
+              m = Image.new('L', (s, s), 0); ImageDraw.Draw(m).ellipse([0, 0, s - 1, s - 1], fill=255)
+              rr = Image.new('RGBA', (s, s), (0, 0, 0, 0)); rr.paste(r, (0, 0), m); rr.save(f'{d}/ic_launcher_round.png')
+              # adaptive icon foreground (108dp canvas)
+              f = s * 108 // 48
+              fg.resize((f, f), Image.LANCZOS).save(f'{d}/ic_launcher_foreground.png')
           print('icons done')
           PY
-          rm -rf android/app/src/main/res/mipmap-anydpi-v26
+          V=android/app/src/main/res/values/ic_launcher_background.xml
+          printf '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#0E1721</color>\n</resources>\n' > $V
+          cat $V
+          ls android/app/src/main/res/mipmap-anydpi-v26 || true
 
       - name: Build APK
         run: |
