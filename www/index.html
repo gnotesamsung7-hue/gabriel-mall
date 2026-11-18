@@ -85,8 +85,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #peekR{right:calc(64px + env(safe-area-inset-right,0px));border-radius:10px}
 
 /* ---------- panels ---------- */
-.panel{position:fixed;inset:0;display:flex;flex-direction:column;pointer-events:auto;padding:calc(10px + env(safe-area-inset-top,0px)) 12px calc(10px + env(safe-area-inset-bottom,0px))}
-.pbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.panel{position:fixed;inset:0;display:flex;flex-direction:column;pointer-events:auto;padding:calc(16px + env(safe-area-inset-top,0px)) calc(40px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(40px + env(safe-area-inset-left,0px))}
+.pbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#mapPanel .pbar{justify-content:space-between}
+#mapPanel .pbar h3{margin:0}
+#mapPanel .pbar .chip{padding:10px 16px;font-size:14px;min-width:48px}
+#mapClose{margin-left:12px}
+#mapWrap{padding:0 8px}
 .pbar h3{font-family:var(--display);font-weight:400;font-size:18px;margin:0 auto 0 0;color:var(--crt)}
 .chip{border:1px solid var(--line);background:rgba(10,16,22,.8);border-radius:7px;padding:7px 11px;font-size:13px;font-weight:600}
 .chip.on{background:var(--crt);color:#002a17;border-color:var(--crt)}
@@ -14317,7 +14322,7 @@ const UI = (function () {
 ;
 'use strict';
 /* ===== Gabriel Shopping Mall: Limang Gabi — core ===== */
-const VERSION = '1.5.0';
+const VERSION = '1.5.1';
 const CRATE_CODE = '1996';
 const PANELS_NEEDED = [2, 3, 4, 4, 4];
 const LOCK_HEAT = 30;
@@ -14456,7 +14461,7 @@ function setupGL() {
   cam = new THREE.PerspectiveCamera(72, 1, 0.05, 140); cam.rotation.order = 'YXZ';
   amb = new THREE.AmbientLight(0x8a93ad, 0.34); scene.add(amb);
   hemi = new THREE.HemisphereLight(0xa8b8d0, 0x2a2018, 0.3); scene.add(hemi);
-  flash = new THREE.SpotLight(0xfff1d0, 0, 26, 0.5, 0.45, 1.1); scene.add(flash); scene.add(flash.target);
+  flash = new THREE.SpotLight(0xfff1d0, 0, 32, 0.55, 0.4, 1.0); scene.add(flash); scene.add(flash.target);
   lantern = new THREE.PointLight(0xffd9a0, 0.4, 7, 1.5); scene.add(lantern);
   stageLight = new THREE.SpotLight(0xff9a3c, 0, 30, 0.6, 0.5, 1); stageLight.position.set(42 * CELL, 3.9, 40 * CELL); stageLight.target.position.set(42 * CELL, 0, 33 * CELL); scene.add(stageLight); scene.add(stageLight.target);
   resize(); addEventListener('resize', resize);
@@ -15151,7 +15156,7 @@ function playerUpdate(dt) {
   let lt = 0; if (K.KeyQ || TB.peekL) lt -= 1; if (K.KeyE || TB.peekR) lt += 1; if (S.mode !== 'play') lt = 0;
   P.lean += (lt - P.lean) * Math.min(1, dt * 9);
   if (P.shieldT > 0) P.shieldT -= dt;
-  if (P.flash && !P.gold) { P.bat -= dt * 0.9 / (role().light || 1); if (P.bat <= 0) { P.bat = 0; P.flash = false; UI.toast('Flashlight battery empty \u2014 find a battery'); } }
+  if (P.flash && !P.gold) { P.bat -= dt * 0.42 / (role().light || 1); if (P.bat <= 0) { P.bat = 0; P.flash = false; UI.toast('Flashlight battery empty \u2014 find a battery'); } }
   if (P.sp > 1 && S.mode === 'play') { P.stepT -= dt * P.sp; if (P.stepT <= 0) { P.stepT = 1.6; SFX.step(P.cr ? 0.05 : wantRun ? 0.22 : 0.1, 0, false); } }
   if (D.broken > 0) D.broken -= dt;
   if (!D.on) D.bat = Math.min(100, D.bat + dt * 4);
@@ -15310,7 +15315,7 @@ function visuals(dt, t) {
   const black = S.power <= 0, fl = floorsG[S.viewF];
   if (S.day) npcVisuals(dt, t);
   if (S.day && fl) { fl.userData.lampMat.color.setScalar(1); fl.userData.glowMat.color.setScalar(1); fl.userData.signMat.color.setScalar(1); stageLight.intensity = S.viewF === 2 ? 1.4 : 0; }
-  else if (fl) { const flick = black ? 0.05 : (S.flick > 0 && Math.random() < S.flick * 0.6) ? Math.random() * 0.3 : (Math.random() < 0.004 ? 0.25 : 0.85); fl.userData.lampMat.color.setScalar(flick); fl.userData.glowMat.color.setScalar(black ? 0.15 : 0.9); fl.userData.signMat.color.setScalar(black ? 0.12 : 0.8); }
+  else if (fl) { const flick = black ? 0.05 : (S.flick > 0 && Math.random() < S.flick * 0.6) ? Math.random() * 0.3 : (Math.random() < 0.004 ? 0.1 : 0.3); fl.userData.lampMat.color.setScalar(flick); fl.userData.glowMat.color.setScalar(black ? 0.1 : 0.42); fl.userData.signMat.color.setScalar(black ? 0.08 : 0.32); }
   P.model.g.visible = (P.view === 'tp' || S.mode === 'drone' || (S.mode === 'cctv' && S.viewF === P.f) || P.suited) && P.f === S.viewF;
   P.model.g.position.set(P.x, P.riding ? 0.12 : 0, P.z); P.model.g.rotation.y = P.h + Math.PI;
   GFX.animPlayer(P.model, dt, P.riding ? 0 : P.sp, P.cr, P.mask, P.suited);
@@ -15343,7 +15348,7 @@ function listener() { if (S.mode === 'drone') return { f: D.f, x: D.x, z: D.z, h
 
 /* ---------- camera ---------- */
 function placeCamera(dt) {
-  amb.intensity = S.day ? 0.95 : 0.34; hemi.intensity = S.day ? 0.75 : 0.3; scene.fog.density = S.day ? 0.012 : 0.05; cam.fov = P.mask ? 62 : 72;
+  amb.intensity = S.day ? 0.95 : (S.power > 0 ? 0.09 : 0.05); hemi.intensity = S.day ? 0.75 : (S.power > 0 ? 0.07 : 0.04); scene.fog.density = S.day ? 0.012 : 0.075; cam.fov = P.mask ? 62 : 72;
   if (S.mode === 'cctv') {
     const c = CAMS[S.camIdx]; showFloor(c.f); cam.fov = 78; cam.position.set(c.x, c.y, c.z); cam.rotation.set(-0.36, c.h + Math.PI, 0);
     amb.intensity = 0.9; hemi.intensity = 0.7; scene.fog.density = 0.022; flash.intensity = 0; lantern.intensity = 0;
@@ -15366,9 +15371,9 @@ function placeCamera(dt) {
     } else { cam.position.set(ex, P.eye + (P.riding ? -0.1 : Math.sin(P.stepT * 3.9) * 0.012 * Math.min(1, P.sp / 2)), ez); cam.rotation.set(P.p, P.h, -P.lean * 0.1 + (P.daze > 0 ? Math.sin(performance.now() / 180) * 0.12 * Math.min(1, P.daze) : 0)); }
     if (S.shake > 0) { S.shake = Math.max(0, S.shake - dt); const k = S.shake * 0.25; cam.position.x += (Math.random() - 0.5) * k; cam.position.y += (Math.random() - 0.5) * k; cam.position.z += (Math.random() - 0.5) * k; }
     flash.color.setHex(P.gold ? 0xffd86b : 0xfff1d0);
-    const on = P.flash && P.bat > 0 && !P.suited; flash.intensity = on ? 2.4 * (P.bat < 15 ? (Math.random() < 0.2 ? 0.3 : 1) : 1) * (S.flick > 0 && Math.random() < S.flick * 0.5 ? Math.random() * 0.25 : 1) : 0;
+    const on = P.flash && P.bat > 0 && !P.suited; flash.intensity = on ? 3.2 * (P.bat < 15 ? (Math.random() < 0.2 ? 0.3 : 1) : 1) * (S.flick > 0 && Math.random() < S.flick * 0.5 ? Math.random() * 0.25 : 1) : 0;
     flash.position.set(ex, P.eye - 0.1, ez); flash.target.position.set(ex + fx * Math.cos(P.p) * 5, P.eye + Math.sin(P.p) * 5, ez + fz * Math.cos(P.p) * 5);
-    lantern.intensity = S.power > 0 ? 0.35 : 0.22; lantern.position.set(P.x, P.eye + 0.6, P.z);
+    lantern.intensity = S.day ? 0.35 : (S.power > 0 ? 0.16 : 0.1); lantern.distance = S.day ? 7 : 3.6; lantern.position.set(P.x, P.eye + 0.6, P.z);
   }
   cam.updateProjectionMatrix();
 }
