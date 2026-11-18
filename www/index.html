@@ -77,12 +77,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .tb.on{background:var(--sale);color:#2b1a00;border-color:var(--sale)}
 .tb.big{width:76px;height:76px;font-size:12px;background:rgba(255,201,60,.22);border-color:var(--sale)}
 .tb svg{width:22px;height:22px;display:block;margin:0 auto 2px}
-#topBtns{position:absolute;right:10px;top:calc(46px + env(safe-area-inset-top,0px));display:flex;gap:6px;pointer-events:auto}
+#topBtns{position:absolute;right:calc(24px + env(safe-area-inset-right,0px));top:calc(46px + env(safe-area-inset-top,0px));display:flex;gap:6px;pointer-events:auto}
 #topBtns button{border:1px solid var(--line);background:rgba(10,16,22,.7);border-radius:8px;padding:7px 9px;font-size:12px;font-weight:600}
 #topBtns button.on{background:var(--crt);color:#002a17}
-.peek{pointer-events:auto;position:absolute;top:50%;margin-top:-34px;width:44px;height:68px;border:1px solid var(--line);background:rgba(10,16,22,.45);font-size:11px;font-weight:700}
-#peekL{left:6px;border-radius:0 10px 10px 0}
-#peekR{right:6px;border-radius:10px 0 0 10px}
+.peek{pointer-events:auto;position:absolute;top:44%;margin-top:-34px;width:48px;height:68px;border:1px solid var(--line);background:rgba(10,16,22,.45);font-size:11px;font-weight:700}
+#peekL{left:calc(64px + env(safe-area-inset-left,0px));border-radius:10px}
+#peekR{right:calc(64px + env(safe-area-inset-right,0px));border-radius:10px}
 
 /* ---------- panels ---------- */
 .panel{position:fixed;inset:0;display:flex;flex-direction:column;pointer-events:auto;padding:calc(10px + env(safe-area-inset-top,0px)) 12px calc(10px + env(safe-area-inset-bottom,0px))}
@@ -224,6 +224,18 @@ p{line-height:1.55;margin:0 0 12px;max-width:62ch}
 #say{position:absolute;left:50%;bottom:calc(196px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(560px,86vw);background:rgba(243,233,210,.96);color:#2a1d0c;border-radius:14px;padding:10px 14px;font-size:15px;line-height:1.4;box-shadow:0 6px 18px rgba(0,0,0,.4)}
 #say::after{content:"";position:absolute;left:50%;bottom:-9px;margin-left:-9px;border:9px solid transparent;border-bottom:0;border-top-color:rgba(243,233,210,.96)}
 #say b{display:block;font-size:12px;letter-spacing:.04em;color:#8a4b00;text-transform:uppercase}
+
+#touch .tb,#touch .peek,#topBtns{transform:scale(var(--bs,1))}
+#touch .tb:not([data-moved="1"]){margin-right:calc(env(safe-area-inset-right,0px) + 16px)}
+#touch.editing{z-index:40;background:rgba(5,8,11,.35)}
+#touch.editing .tb,#touch.editing .peek,#touch.editing #topBtns{outline:2px dashed var(--sale);outline-offset:3px;cursor:grab;touch-action:none}
+.laybar{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:41;background:var(--panel);border:1px solid var(--sale);border-radius:12px;padding:8px 12px;display:grid;gap:6px;justify-items:center;text-align:center;max-width:94vw}
+.laybar .lrow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.sign .flick2{animation:flick2 9s infinite steps(1)}
+@keyframes flick2{0%,36%,38%,41%,100%{opacity:1}37%,39%,40%{opacity:.18}}
+@media (prefers-reduced-motion: reduce){.sign .flick2{animation:none}}
+.goers{display:grid;gap:6px;max-width:560px}
+.goer{display:grid;grid-template-columns:minmax(90px,1fr) 2fr;gap:6px}
 </style>
 </head><body>
 <canvas id="gl"></canvas>
@@ -13311,7 +13323,7 @@ const GFX = (function () {
   function mkAnimatronic(type) {
     const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
     const P = { g, body, legs: [], arms: [], head: null, ph: Math.random() * 6, eyes: [], seed: Math.random() * 10 };
-    const leg = (x, w, h, col) => { const pv = new THREE.Group(); pv.position.set(x, h, 0); body.add(pv); B(pv, w, h, w * 1.15, col, 0, -h / 2, 0); P.legs.push(pv); return pv; };
+    const leg = (x, w, h, col) => { P.legH = h; const pv = new THREE.Group(); pv.position.set(x, h, 0); body.add(pv); B(pv, w, h, w * 1.15, col, 0, -h / 2, 0); P.legs.push(pv); return pv; };
     const arm = (x, y, w, h, col) => { const pv = new THREE.Group(); pv.position.set(x, y, 0); body.add(pv); B(pv, w, h, w, col, 0, -h / 2, 0); P.arms.push(pv); return pv; };
     const head = new THREE.Group(); body.add(head); P.head = head;
     let eyeCol = 0xffb300, ex = 0.2, ey = 0.48, ez = 0.37, sc = 1, eyeR = 0.07;
@@ -13548,6 +13560,7 @@ const STORY = {
   boss: { name: 'Ang Higante', tag: 'The boss', t: 'For the 1999 Paskong Gabriel parade, Mang Isko started a giant like the higantes of Angono: two papier-m\u00e2ch\u00e9 heads on a scaffolding pole, four long arms, four long legs. It stood on the rooftop next to the antenna when the lightning hit. It never learned the lullaby, masks and flashlights don\u2019t work on it, and every light near it flickers. Only camera flashes, confetti and fireworks slow it down.' },
   attacks: [['Kardong Kalabaw', 'Gets mad when shutters block him or he loses you. Then he snorts, lowers his head and CHARGES in a straight line. Step aside \u2014 he crashes into the wall and gets dizzy.'], ['Moko Matsing', 'Gets angry every time he\u2019s stunned or loses you. Then he THROWS HIS CYMBALS. Getting hit makes you dizzy and slow for a few seconds.'], ['Pusang Gala', 'Late at night, or when you stare at her too long, she gets REALLY SCARY: taller, red eyes, a wide grin, and she only freezes when you look at her from close by.'], ['Tandang Tonyo', 'Crows when he sees a face without a mask and calls every mascot on the floor.'], ['Ang Higante', 'Long arms grab from far away. Lights and flashlights flicker when it\u2019s near.']],
   helper: { name: 'Bantay', tag: 'The secret friend', t: 'Mang Isko\u2019s first prototype, an aspin with blue eyes, unplugged in storage during the storm \u2014 so he still remembers the true rule. He follows you from the shadows, barks to pull mascots away, leaves gifts, and hides whenever you look straight at him.' },
+  goers: [{ n: 'Aling Nena', a: 'buying halo-halo for my apo' }, { n: 'Kuya Jun', a: 'looking for new rubber shoes' }, { n: 'Ate Joy', a: 'waiting for the last full show' }, { n: 'Boy Pogi', a: 'playing at the arcade' }, { n: 'Lolo Ben', a: 'paying bills at Bayad Dito' }, { n: 'Tita Baby', a: 'shopping at the Midnight Madness Sale' }, { n: 'Kuya Carlo', a: 'getting a haircut' }, { n: 'Ate Mae', a: 'buying a birthday gift for Lola' }],
   botNames: ['Aling Nena', 'Kuya Jun', 'Ate Joy', 'Boy Pogi', 'Lolo Ben', 'Tita Baby', 'Kuya Carlo', 'Ate Mae'],
   tapes: [
     { h: 'Tape 1 \u2014 Ang Barkada', t: 'Isko \u2019to. 1996. Si Kardong ang unang natapos ko \u2014 wiper motor sa braso, speaker ng karaoke sa dibdib. Then Moko, then Pusang Gala, then Tonyo. The kids love them. Don Gabriel wants them dancing every Saturday. I gave them one brain so they can dance together. I call it the SAYA Core.' },
@@ -13810,7 +13823,7 @@ const UI = (function () {
     S.mode = 'menu'; S.over = false; S.paused = false; P.suited = false; S.day = false; clearNpcs(); closePanels(); hideHud(); $('say').classList.add('hidden');
     if (D.on) droneOff(); $('gl').className = ''; $('maskfx').classList.remove('on');
     const t = 'GABRIEL', m = 'SHOPPING MALL';
-    show('<div class="wrap"><h1 class="sign">' + t + '<br>' + m.slice(0, 11) + '<span class="flick" id="flickL">L</span>' + m.slice(12) + '</h1>' +
+    show('<div class="wrap"><h1 class="sign">GAB<span class="flick2" id="flickR">R</span>IEL<br>' + m.slice(0, 11) + '<span class="flick" id="flickL">L</span>' + m.slice(12) + '</h1>' +
       '<p class="sub">Limang Gabi \u2014 five nights with the Barkada<span class="verchip">v' + VERSION + '</span></p><p class="est">Commonwealth Ave., Quezon City \u2022 Est. 1996 \u2022 Now playing: ' + esc(SAVE.set.name || 'Matthew') + '</p>' +
       '<ul class="dir">' +
       '<li><button data-go="solo"><span class="fl">UG</span><span>Play solo<small>Night ' + SAVE.nights + ' of 5 unlocked</small></span></button></li>' +
@@ -13822,6 +13835,7 @@ const UI = (function () {
       '<li><button data-go="settings"><span class="fl">\u2699</span><span>Settings</span></button></li>' +
       '</ul></div>', { id: 'menu' });
     const ka = ART.get('key_art_title'); if (ka) scr().firstElementChild.style.background = 'linear-gradient(90deg,rgba(9,14,20,.95) 0%,rgba(9,14,20,.78) 40%,rgba(9,14,20,.15) 75%), url(' + ka + ') right center/cover';
+    let rt = 0, rtt = 0; $('flickR').addEventListener('click', () => { const now = performance.now(); rt = now - rtt < 1500 ? rt + 1 : 1; rtt = now; SFX.init(); SFX.click(); if (rt >= 5) { rt = 0; S.infKwitis = true; SFX.boom(0.6); toast('\u221E Walang katapusang kwitis! Infinite firework rockets every night (until you close the game).', 3800); } });
     let taps = 0, tt = 0; $('flickL').addEventListener('click', () => { const now = performance.now(); taps = now - tt < 1500 ? taps + 1 : 1; tt = now; SFX.init(); SFX.click(); if (taps >= 5) { taps = 0; ticketScreen(); } });
   }
   function nightsScreen() {
@@ -13973,6 +13987,32 @@ const UI = (function () {
     }
   }
 
+  /* ---------- touch button layout ---------- */
+  const MOVABLE = ['bUse', 'bFlash', 'bMask', 'bRun', 'bCrouch', 'bLantern', 'bConf', 'bParol', 'bRocket', 'bSkate', 'peekL', 'peekR', 'topBtns'];
+  function applyLayout() {
+    const L = SAVE.set.layout || {}; document.documentElement.style.setProperty('--bs', SAVE.set.btnScale || 1);
+    for (const id of MOVABLE) { const el = $(id); if (!el) continue; if (el.dataset.orig === undefined) el.dataset.orig = el.getAttribute('style') || ''; const p = L[id]; if (!p) { el.setAttribute('style', el.dataset.orig); el.dataset.moved = ''; continue; }
+      const w = el.offsetWidth || 58, h = el.offsetHeight || 58; el.style.left = Math.max(4, Math.min(innerWidth - w - 4, p.x * innerWidth - w / 2)) + 'px'; el.style.top = Math.max(4, Math.min(innerHeight - h - 4, p.y * innerHeight - h / 2)) + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.marginTop = '0'; el.dataset.moved = '1'; }
+  }
+  addEventListener('resize', () => setTimeout(applyLayout, 50));
+  let editing = false;
+  function layoutEditor(back) {
+    closeScreens(); editing = true; const tc = $('touch'); tc.classList.remove('hidden'); tc.classList.add('editing'); $('hud').classList.add('hidden');
+    const hid = MOVABLE.filter(id => $(id).classList.contains('hidden')); hid.forEach(id => $(id).classList.remove('hidden'));
+    const bar = document.createElement('div'); bar.className = 'laybar'; bar.innerHTML = '<b>Drag the buttons where you like</b><span class="lrow"><button class="chip" data-s="-">Smaller</button><button class="chip" data-s="+">Bigger</button><button class="chip" id="lyReset">Reset</button><button class="chip on" id="lyDone">Done</button></span>'; document.body.appendChild(bar);
+    let drag = null;
+    const down = e => { if (!editing) return; const el = e.target.closest(MOVABLE.map(i => '#' + i).join(',')); if (!el) return; e.preventDefault(); e.stopPropagation(); const r = el.getBoundingClientRect(); drag = { el, dx: e.clientX - r.left, dy: e.clientY - r.top }; el.setPointerCapture && el.setPointerCapture(e.pointerId); };
+    const move = e => { if (!drag) return; e.preventDefault(); const el = drag.el, w = el.offsetWidth, h = el.offsetHeight; const x = Math.max(4, Math.min(innerWidth - w - 4, e.clientX - drag.dx)), y = Math.max(4, Math.min(innerHeight - h - 4, e.clientY - drag.dy)); el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.marginTop = '0'; };
+    const up = () => { if (!drag) return; const el = drag.el, r = el.getBoundingClientRect(); (SAVE.set.layout = SAVE.set.layout || {})[el.id] = { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight }; saveGame(); drag = null; };
+    const stop = e => { if (editing && e.target.closest && e.target.closest('#touch')) { e.stopPropagation(); e.preventDefault(); } };
+    tc.addEventListener('pointerdown', down, true); addEventListener('pointermove', move); addEventListener('pointerup', up); tc.addEventListener('click', stop, true);
+    bar.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { SAVE.set.btnScale = Math.max(0.7, Math.min(1.5, (SAVE.set.btnScale || 1) + (b.dataset.s === '+' ? 0.1 : -0.1))); saveGame(); applyLayout(); });
+    $('lyReset').onclick = () => { SAVE.set.layout = {}; SAVE.set.btnScale = 1; saveGame(); applyLayout(); };
+    $('lyDone').onclick = () => { editing = false; tc.classList.remove('editing'); tc.removeEventListener('pointerdown', down, true); removeEventListener('pointermove', move); removeEventListener('pointerup', up); tc.removeEventListener('click', stop, true); bar.remove(); hid.forEach(id => $(id).classList.add('hidden'));
+      if (S.mode === 'menu') { tc.classList.add('hidden'); settingsScreen(back); } else { $('hud').classList.remove('hidden'); tc.classList.toggle('hidden', !coarse); settingsScreen(back); } };
+    applyLayout();
+  }
+
   /* ---------- puzzles ---------- */
   function shuffled(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[a[i], a[j]] = [a[j], a[i]]; } return a; }
   function puzzleWrap(title, hint, inner) { if (document.exitPointerLock) document.exitPointerLock(); show('<div class="wrap puz" style="max-width:100%"><h2 style="margin:0">' + title + '</h2><p class="est" style="margin:0">' + hint + '</p>' + inner + '<button class="back" id="pzLeave" style="margin:0">Leave</button></div>', { id: 'puzzle', cls: 'solid', pause: true }); $('pzLeave').onclick = () => { SFX.ui(); go('resume'); }; }
@@ -14077,7 +14117,13 @@ const UI = (function () {
       '<label for="sV">Volume</label><input id="sV" type="range" min="0" max="1" step="0.05" value="' + s.vol + '">' +
       '<label for="sH">Night length<small>Seconds per in-game hour</small></label><select id="sH"><option value="60">Normal (60s)</option><option value="45">Shorter (45s)</option><option value="90">Longer (90s)</option></select>' +
       '<label for="sQ">Graphics<small>Applies after reload</small></label><select id="sQ"><option value="high">Sharper</option><option value="low">Faster</option></select>' +
-      '</div><p class="est" style="margin-top:14px">Night length can\u2019t change in the middle of a night.</p></div>', { id: 'settings', cls: 'solid', pause: true });
+      '</div><p class="est" style="margin-top:14px">Night length can\u2019t change in the middle of a night.</p>' +
+      '<h4>On-screen buttons</h4><p>Move the touch buttons away from the edges of your screen, or make them bigger.</p><div class="btns" style="margin-top:0"><button class="btn alt" id="sLay">Adjust button positions</button></div>' +
+      '<h4>Mall-goers</h4><p>The people trapped in the mall at night (and the shoppers you meet in the day). Change their names and what they were doing.</p><div class="goers" id="sG"></div><div class="btns"><button class="chip" id="sGR">Reset to the original people</button></div></div>', { id: 'settings', cls: 'solid', pause: true });
+    const drawG = () => { $('sG').innerHTML = s.goers.map((g, i) => '<div class="goer"><input data-i="' + i + '" data-k="n" maxlength="16" value="' + esc(g.n) + '" aria-label="Name ' + (i + 1) + '"><input data-i="' + i + '" data-k="a" maxlength="48" value="' + esc(g.a) + '" aria-label="What ' + esc(g.n) + ' was doing"></div>').join(''); $('sG').querySelectorAll('input').forEach(e => e.addEventListener('change', () => { s.goers[+e.dataset.i][e.dataset.k] = e.value.trim() || (e.dataset.k === 'n' ? 'Shopper' : 'shopping'); saveGame(); })); };
+    if (!s.goers || s.goers.length < 3) s.goers = STORY.goers.map(g => ({ n: g.n, a: g.a })); drawG();
+    $('sGR').onclick = () => { s.goers = STORY.goers.map(g => ({ n: g.n, a: g.a })); saveGame(); drawG(); SFX.ui(); };
+    $('sLay').onclick = () => { SFX.ui(); layoutEditor(back); };
     $('sJ').value = s.scare; $('sH').value = String(s.hour); $('sQ').value = s.quality;
     const apply = () => { s.name = $('sN').value.trim() || 'Matthew'; s.sens = +$('sS').value; s.scare = $('sJ').value; s.vol = +$('sV').value; if (S.mode === 'menu') s.hour = +$('sH').value; s.quality = $('sQ').value; SFX.setVol(s.vol); saveGame(); };
     scr().querySelectorAll('input,select').forEach(e => e.addEventListener('change', apply));
@@ -14119,7 +14165,7 @@ const UI = (function () {
 
   /* ---------- HUD ---------- */
   function startHud() {
-    $('hud').classList.remove('hidden'); $('touch').classList.toggle('hidden', !coarse); log = []; fullLog = []; renderLog();
+    $('hud').classList.remove('hidden'); $('touch').classList.toggle('hidden', !coarse); log = []; fullLog = []; renderLog(); applyLayout();
     $('keys').innerHTML = coarse ? '' : '<kbd>Space</kbd> use \u2022 <kbd>F</kbd> light \u2022 <kbd>M</kbd> mask \u2022 <kbd>Q</kbd>/<kbd>E</kbd> peek \u2022 <kbd>C</kbd> crouch<br><kbd>Tab</kbd> map \u2022 <kbd>R</kbd> radio \u2022 <kbd>G</kbd> drone \u2022 <kbd>K</kbd> skate \u2022 <kbd>V</kbd> view \u2022 <kbd>Esc</kbd> pause';
     roleRefresh();
     $('suited').classList.add('hidden'); $('gl').className = '';
@@ -14155,8 +14201,8 @@ const UI = (function () {
     $('lanternMeter').classList.toggle('hidden', !S.secret);
     if (S.day) { const g = SAVE.passport.length, tot = STORY.day.stamps.length; $('obj').innerHTML = (g >= tot ? '<span style="color:var(--crt)">\u2713</span>' : '\u2605') + ' Mall passport ' + g + '/' + tot; } else { const need = PANELS_NEEDED[S.night - 1], dn = S.panels.filter(q => q.done).length; $('obj').innerHTML = (dn >= need ? '<span style="color:var(--crt)">\u2713</span>' : '\u26A1') + ' Power panels ' + dn + '/' + need + (dn >= need ? ' \u2014 morning reset ready' : ' \u2014 needed for 6 AM'); }
     { const r = inSafe(P) ? roomAt(P.f, P.x, P.z) : null, lk = $('lock'); if (r && r.kind === 'cctv' && S.power > 0 && !S.day) { lk.classList.remove('hidden'); lk.textContent = r.hot ? 'LOCK FAILED \u2014 get out!' : 'Room lock: ' + Math.max(0, Math.ceil(LOCK_HEAT - r.heat)) + 's'; } else lk.classList.add('hidden'); }
-    $('bRocket').classList.toggle('hidden', !(P.rockets > 0)); $('bRocket').textContent = 'Kwitis ' + P.rockets; $('bSkate').classList.toggle('hidden', !P.skate); $('bSkate').classList.toggle('on', P.riding);
-    const hasW = S.lockerUsed && (P.conf > 0 || P.parol > 0 || P.gold || P.shieldT > 0) || P.rockets > 0; $('wpn').classList.toggle('hidden', !hasW); if (hasW) $('wpn').textContent = [S.lockerUsed ? 'Confetti ' + P.conf : '', S.lockerUsed ? 'Parol ' + (P.shieldT > 0 ? Math.ceil(P.shieldT) + 's' : P.parol) : '', P.gold ? 'Gold light' : '', P.rockets > 0 ? 'Kwitis ' + P.rockets : ''].filter(Boolean).join(' \u2022 ');
+    $('bRocket').classList.toggle('hidden', !(P.rockets > 0)); $('bRocket').textContent = 'Kwitis ' + (P.rockets === Infinity ? '\u221E' : P.rockets); $('bSkate').classList.toggle('hidden', !P.skate); $('bSkate').classList.toggle('on', P.riding);
+    const hasW = S.lockerUsed && (P.conf > 0 || P.parol > 0 || P.gold || P.shieldT > 0) || P.rockets > 0; $('wpn').classList.toggle('hidden', !hasW); if (hasW) $('wpn').textContent = [S.lockerUsed ? 'Confetti ' + P.conf : '', S.lockerUsed ? 'Parol ' + (P.shieldT > 0 ? Math.ceil(P.shieldT) + 's' : P.parol) : '', P.gold ? 'Gold light' : '', P.rockets > 0 ? 'Kwitis ' + (P.rockets === Infinity ? '\u221E' : P.rockets) : ''].filter(Boolean).join(' \u2022 ');
     $('bConf').classList.toggle('hidden', !(P.conf > 0)); $('bParol').classList.toggle('hidden', !(P.parol > 0)); $('bConf').textContent = 'Confetti ' + P.conf; $('lanTxt').textContent = S.lantern + ' left'; $('bLantern').classList.toggle('hidden', !S.secret);
     if (S.day) { const mins = Math.min(11 * 60, Math.floor(S.time)), hh = 10 + Math.floor(mins / 60), mm = mins % 60, h12 = ((hh + 11) % 12) + 1; $('clkT').textContent = h12 + ':' + String(mm).padStart(2, '0') + (hh >= 12 ? ' PM' : ' AM'); $('clkN').textContent = mins >= 660 ? 'Day visit \u2022 mall closing' : 'Day visit'; }
     else { $('clkT').textContent = fmtHour(Math.min(5, Math.floor(S.time / SAVE.set.hour))); $('clkN').textContent = 'Night ' + S.night + (S.black ? ' \u2022 BLACKOUT' : ''); }
@@ -14224,7 +14270,7 @@ const UI = (function () {
   const DAYBERT = [['Where should I go next?', () => { const left = STORY.day.stamps.filter(([n]) => !SAVE.passport.includes(n)); if (!left.length) return 'Kabisado mo na ang buong mall! Ready ka na para sa gabi.'; const [n, f] = left[(Math.random() * left.length) | 0]; return 'Try ' + n + ' on the ' + FLOOR_NAMES[f] + ' floor. ' + left.length + ' passport stamps left.'; }], ['Where are the CCTV rooms?', () => 'There are 8: two each on the Basement (Parking Guard Post, Loading Dock), Lower Ground, Upper Ground (incl. this Security Office) and 2nd Floor. Open the map to see them.'], ['Any tips for tonight?', bertTip]];
   function bertPanels() { const left = S.panels.filter(q => !q.done); if (!left.length) return 'All panels are fixed. Ayos! Just hold on until 6.'; return 'Still broken: ' + left.map(q => FLOOR_NAMES[q.f] + ' (' + q.name + ')').join(', ') + '.'; }
   function bertCode() { return S.poster ? 'I taped the generator code on a wall in ' + FLOOR_NAMES[S.poster.f] + ', inside ' + S.poster.name + '. The keypad is at the Loading Dock in the Basement.' : 'Hmm, I lost the code poster.'; }
-  function bertBots() { if (!S.bots.length) return 'Just you, I think.'; return S.bots.map(b => b.name + (b.su ? ' (zipped in a suit! ' + FLOOR_NAMES[b.f] + ')' : ' (hiding, ' + FLOOR_NAMES[b.f] + ')')).join(' \u2022 ') + '. Unzip anyone who got caught.'; }
+  function bertBots() { if (!S.bots.length) return 'Just you, I think.'; return S.bots.map(b => b.name + (b.doing ? ', who was ' + b.doing + ',' : '') + (b.su ? ' (zipped in a suit! ' + FLOOR_NAMES[b.f] + ')' : ' (hiding, ' + FLOOR_NAMES[b.f] + ')')).join(' \u2022 ') + '. Unzip anyone who got caught.'; }
   function bertWhere() { const act = S.an.filter(a => a.st !== 'dormant'); if (!act.length) return 'They\u2019re all still on the stage. For now.'; return act.map(a => a.d.name.split(' ')[0] + ': ' + FLOOR_NAMES[a.f]).join(' \u2022 ') + '.'; }
   function bertSafe() { const cnt = [0, 0, 0, 0]; S.an.forEach(a => { if (a.st !== 'dormant') cnt[a.f]++; }); let b = 0; for (let f = 1; f < 4; f++) if (cnt[f] < cnt[b] || (cnt[f] === cnt[b] && f === P.f)) b = f; return FLOOR_NAMES[b] + ' looks quiet on my cameras right now.'; }
   function bertTip() { const t = ['Hold your flashlight on Moko \u2014 he reboots fast.', 'Pusang Gala freezes when you look at her. Back away facing her.', 'Kardong breaks shutters, but it takes him a few seconds.', 'Crouch into the vents between the stores to sneak past.', 'The radio hisses when one is close. Listen!', 'Wear the mask near Tandang Tonyo or he\u2019ll crow.', 'The toy piano by the stage plays the Barkada lullaby. They still love it.', 'Mang Isko never claimed something from the Lost & Found. The flickering letter on the mall sign remembers.', 'I keep hearing a dog barking at night. Weird \u2014 walang aso dito.', 'Sports Hataw on Upper Ground sells skateboards. Fast, but loud!', 'The STAFF ONLY locks overheat after 30 seconds. Hop between CCTV rooms.', 'Somebody hid a crate of paputok in the cinema storage. The lid has a riddle about when the mall opened.']; return t[(Math.random() * t.length) | 0]; }
@@ -14271,7 +14317,7 @@ const UI = (function () {
 ;
 'use strict';
 /* ===== Gabriel Shopping Mall: Limang Gabi — core ===== */
-const VERSION = '1.4.0';
+const VERSION = '1.5.0';
 const CRATE_CODE = '1996';
 const PANELS_NEEDED = [2, 3, 4, 4, 4];
 const LOCK_HEAT = 30;
@@ -14302,7 +14348,7 @@ const ALL_AN = ['kardong', 'moko', 'pusa', 'tandang', 'higante'];
 const AN_TYPES = ['kardong', 'moko', 'pusa', 'tandang'];
 const ST_CODE = ['dormant', 'patrol', 'investigate', 'chase', 'stun', 'linger', 'bash', 'return', 'windup', 'charge'];
 
-let SAVE = { passport: [], nights: 1, tapes: [], stars: {}, bantay: false, bossSeen: false, seenIntro: false, set: { name: 'Matthew', sens: 1, scare: 'full', vol: 0.8, quality: 'high', hour: 60 } };
+let SAVE = { passport: [], nights: 1, tapes: [], stars: {}, bantay: false, bossSeen: false, seenIntro: false, set: { name: 'Matthew', sens: 1, scare: 'full', vol: 0.8, quality: 'high', hour: 60, goers: STORY.goers.map(g => ({ n: g.n, a: g.a })), layout: {}, btnScale: 1 } };
 try { const s = JSON.parse(localStorage.getItem('gsm5')); if (s) SAVE = Object.assign(SAVE, s, { set: Object.assign(SAVE.set, s.set || {}) }); } catch (e) { }
 function saveGame() { try { localStorage.setItem('gsm5', JSON.stringify(SAVE)); } catch (e) { } }
 
@@ -14549,7 +14595,7 @@ function genItems(night, seed) {
   return { items: out, gen, panels, poster, gcode };
 }
 function startNight(n, seed, roles, t0) {
-  S.day = false; clearNpcs();
+  S.day = false; clearNpcs(); if (S.solo) S.goers = null;
   S.night = n; S.seed = seed; S.time = t0 || 0; S.hour = Math.floor(S.time / SAVE.set.hour); S.hourShown = S.hour; S.power = 100; S.black = false; S.genUsed = false; S.over = false; S.ending = false;
   S.suited = new Set(); S.noises = []; S.pings = []; S.lantern = 3; S.epoch++; S.paused = false; S.winT = 0;
   if (roles) S.roles = roles;
@@ -14563,8 +14609,8 @@ function startNight(n, seed, roles, t0) {
   S.bots.forEach(b => { scene.remove(b.m.g); scene.remove(b.label); });
   S.bots = genBots(n, seed);
   S.H = { ty: 'bot', f: 2, x: W.stage[0].x, z: W.stage[0].z - 2, h: 0, vis: false, tgt: null, cd: 25, giftT: 70, seenT: 0, path: null, pi: 0, gf: 2, gx: 0, gz: 0, padLock: false, repath: 0, tx: 0, tz: 0, th: 0, px: 0, pz: 0, spd: 0, pw: false, pwT: 0 };
-  P.conf = 0; P.parol = 0; P.shieldT = 0; P.gold = false; P.rockets = 0; P.daze = 0; P.skate = false; P.riding = false;
-  S.proj = []; S.crateUsed = false; S.stall = false; S.flick = 0; S.shake = 0;
+  P.conf = 0; P.parol = 0; P.shieldT = 0; P.gold = false; P.rockets = S.infKwitis ? Infinity : 0; P.daze = 0; P.skate = false; P.riding = false;
+  S.proj = []; S.crateUsed = false; S.stall = false; S.flick = 0; S.shake = 0; S.tbank = 0; S.act = {}; S.berserk = false;
   W.cctv.forEach(r => { r.heat = 0; r.hot = false; r.warned = false; });
   W.sdoors.forEach(d => { d.open = false; }); sdMeshes.forEach(m => { m.v = 0; m.halves.forEach(h => h.hinge.rotation.y = 0); });
   rocketsFx.forEach(r => scene.remove(r.m)); rocketsFx = [];
@@ -14596,6 +14642,7 @@ function mkNpc(o) {
   npcs.push(n); return n;
 }
 function startDay() {
+  S.goers = null;
   S.dayStarting = true; S.solo = true; S.roles = {}; startNight(1, (Math.random() * 1e6) | 0); S.dayStarting = false;
   S.day = true; S.time = 0; S.power = 100; S.over = false;
   S.bots.forEach(b => { scene.remove(b.m.g); scene.remove(b.label); }); S.bots = []; S.H.vis = false;
@@ -14612,7 +14659,7 @@ function startDay() {
   mkNpc({ kind: 'lolo', name: 'Lolo', f: 2, x: C(36.8), z: C(37.6), h: Math.PI * 0.75, st: 'stand', lines: D2.lolo, ci: 3, sc: 0.95 });
   for (let i = 0; i < 6; i++) mkNpc({ kind: 'kid', name: '', f: 2, x: C(40.3 + i * 0.75), z: C(37.2 + (i % 2) * 0.6), h: Math.PI, st: 'watch', lines: D2.kid, sc: 0.65 });
   for (let i = 0; i < 3; i++) { const [x, z] = poiXZ(3); mkNpc({ kind: 'kid', name: '', f: 3, x, z, st: 'walk', lines: D2.kid, sc: 0.65, fast: 1 }); }
-  const per = [3, 9, 9, 8]; per.forEach((n, f) => { for (let i = 0; i < n; i++) { const [x, z] = poiXZ(f); mkNpc({ kind: 'shopper', name: '', f, x, z, st: 'walk', lines: D2.shopper, idleT: R() * 4 }); } });
+  const gl = goers(); let gi = 0; const per = [3, 9, 9, 8]; per.forEach((n, f) => { for (let i = 0; i < n; i++) { const [x, z] = poiXZ(f), g = gi < gl.length ? gl[gi++] : null; mkNpc({ kind: 'shopper', name: g ? g.n : '', f, x, z, st: 'walk', lines: g ? ['Hi! I\u2019m ' + g.n + '. I\u2019m ' + g.a + '.'].concat(D2.shopper) : D2.shopper, idleT: R() * 4 }); } });
   S.mode = 'play'; showFloor(P.f); UI.startHud(); UI.dayCard();
 }
 function dayTick(dt) {
@@ -14643,13 +14690,29 @@ function npcVisuals(dt, t) {
   }
 }
 
+/* ---------- task-driven clock (kept subtle) ----------
+   The night clock runs at full speed while players explore, slows down while everyone hides
+   (CCTV rooms, standing still), and quietly jumps ahead whenever a task is completed. */
+const TASK_TIME = { fuse: 7, battery: 3, skate: 2, tape: 15, panel: 26, gen: 20, lullaby: 10, freebot: 10 };
+function addTaskTime(k) { S.tbank = (S.tbank || 0) + (TASK_TIME[k] || 0) * SAVE.set.hour / 60; }
+function timeRate(dt) {
+  S.act = S.act || {}; let best = 0, any = false;
+  for (const p of players()) {
+    if (p.su || (!S.solo && p.id === S.navId)) continue; any = true;
+    const moving = p.sp > 0.8 && !isSafe(p) ? 1 : 0, a = S.act[p.id] === undefined ? 1 : S.act[p.id];
+    S.act[p.id] = a + (moving - a) * Math.min(1, dt / 12); best = Math.max(best, S.act[p.id]);
+  }
+  return any ? 0.35 + 0.65 * best : 1;
+}
+
 /* ---------- mall-goer bots ---------- */
+function goers() { const g = (S.goers && S.goers.length ? S.goers : SAVE.set.goers || []).filter(x => x && x.n); return g.length >= 3 ? g : STORY.goers; }
 function genBots(night, seed) {
-  const R = rng(seed * 31 + night * 977), names = STORY.botNames.slice(); for (let i = names.length - 1; i > 0; i--) { const j = (R() * (i + 1)) | 0;[names[i], names[j]] = [names[j], names[i]]; }
+  const R = rng(seed * 31 + night * 977), names = goers().slice(); for (let i = names.length - 1; i > 0; i--) { const j = (R() * (i + 1)) | 0;[names[i], names[j]] = [names[j], names[i]]; }
   const out = [];
   for (let i = 0; i < 3; i++) {
     const f = 1 + (i % 3), pois = W.pois[f], c = pois[(R() * pois.length) | 0], x = (c % GW + 0.5) * CELL, z = ((c / GW | 0) + 0.5) * CELL;
-    const b = { ty: 'bot', bot: true, id: 'bot' + i, i, name: names[i], f, x, z, h: 0, st: 'wander', path: null, pi: 0, gf: f, gx: x, gz: z, tired: R() * 0.1, padLock: false, cool: 0, su: false, tx: x, tz: z, th: 0, px: x, pz: z, spd: 0, stepT: 0 };
+    const b = { ty: 'bot', bot: true, id: 'bot' + i, i, name: names[i].n, doing: names[i].a, f, x, z, h: 0, st: 'wander', path: null, pi: 0, gf: f, gx: x, gz: z, tired: R() * 0.1, padLock: false, cool: 0, su: false, tx: x, tz: z, th: 0, px: x, pz: z, spd: 0, stepT: 0 };
     b.m = GFX.mkPlayer(i + 1); scene.add(b.m.g); b.label = nameLabel(b.name, true); scene.add(b.label); out.push(b);
   }
   return out;
@@ -14685,14 +14748,22 @@ function bantayUpdate(dt, PL) {
   let p = alive.find(q => q.id === H.tgt); if (!p || Math.random() < dt * 0.015) { p = alive[(Math.random() * alive.length) | 0]; H.tgt = p.id; }
   if (!H.vis) { H.vis = true; bantayHide(H, p); }
   const d = Math.hypot(H.x - p.x, H.z - p.z);
+  const giant = S.power <= 20; H.helpT = Math.max(0, (H.helpT || 0) - dt);
+  if (giant && H.helpT <= 0) {
+    if (H.f !== p.f || d > 26 || d < 11) { const c = farCell(p.f, p.x, p.z, 13, 22, null); if (c) { H.f = p.f; H.x = c[0]; H.z = c[1]; H.path = null; } }
+    let dh = Math.atan2(p.x - H.x, p.z - H.z) - H.h; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); H.h += dh * Math.min(1, dt * 2); H.path = null;
+  } else if (giant) { if (H.path && H.pi < H.path.length) moveAn(H, dt, 5, null); }
+  else {
   if (H.f === p.f && eyeSees(p.f, p.x, p.z, -Math.sin(p.h), -Math.cos(p.h), H, 0.86, 16)) { H.seenT += dt; if (H.seenT > 1.3) bantayHide(H, p); } else H.seenT = Math.max(0, H.seenT - dt);
   if (H.f !== p.f || d > 20) bantayHide(H, p);
   else if (d > 11) { H.repath -= dt; if (!H.path || H.pi >= H.path.length || H.repath <= 0) { planTo(H, p.f, p.x, p.z); H.repath = 1.2; } moveAn(H, dt, 3.3, null); }
   else { H.path = null; let dh = Math.atan2(p.x - H.x, p.z - H.z) - H.h; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); H.h += dh * Math.min(1, dt * 3); }
+  }
   if (H.cd <= 0) for (const a of S.an) {
     if (a.st !== 'chase') continue; const tp = alive.find(q => q.id === a.tgt); if (!tp || tp.f !== a.f || Math.hypot(a.x - tp.x, a.z - tp.z) > 7) continue;
     let bx = H.x, bz = H.z; if (H.f !== a.f || Math.hypot(H.x - tp.x, H.z - tp.z) < 6) { const c = farCell(a.f, tp.x, tp.z, 10, 18); if (!c) continue; H.f = a.f; H.x = bx = c[0]; H.z = bz = c[1]; H.path = null; }
-    a.tgt = null; a.sus = {}; a.st = 'patrol'; investigate(a, a.f, bx, bz); H.cd = 55; hostEv({ k: 'bark', f: a.f, x: bx, z: bz, a: a.k }); break;
+    if (giant) { const mx = (a.x + tp.x) / 2, mz = (a.z + tp.z) / 2, c = farCell(a.f, mx, mz, 2, 6, null) || [mx, mz]; H.f = a.f; H.x = c[0]; H.z = c[1]; H.helpT = 3.5; H.path = null; H.h = Math.atan2(a.x - H.x, a.z - H.z); stunAn(a, 4); bx = H.x; bz = H.z; }
+    a.tgt = null; a.sus = {}; if (a.st !== 'stun') { a.st = 'patrol'; investigate(a, a.f, bx, bz); } H.cd = giant ? 35 : 55; hostEv({ k: 'bark', f: a.f, x: bx, z: bz, a: a.k, big: giant ? 1 : 0 }); break;
   }
   if (H.giftT <= 0 && H.f === p.f && d < 16) { H.giftT = 85 + Math.random() * 40; const type = S.power < 45 ? 'fuse' : 'battery'; hostEv({ k: 'gift', it: { id: S.items.length, type, f: H.f, x: H.x, z: H.z, taken: false, name: 'Bantay\u2019s gift' } }); }
   if (S.power <= 0 && !H.pw) { H.pwT += dt; if (H.pwT > 6) { H.pw = true; S.power = 10; S.black = false; hostEv({ k: 'bpower' }); } }
@@ -14711,7 +14782,7 @@ function beaconUpdate(t) {
 function grantLocker() { S.lockerUsed = true; P.conf = 5; P.parol = 1; P.gold = true; SFX.good(); LOCKER.m.userData.lock.visible = false; LOCKER.m.userData.gl.visible = false; }
 function useConfetti() { if (P.suited || P.conf <= 0) return; P.conf--; SFX.pop(); act({ a: 'confetti', f: P.f, x: P.x, z: P.z, h: P.h }); }
 function grantKwitis() { S.crateUsed = true; P.rockets = 3; SFX.good(); CRATE.m.userData.led.material.color.setHex(0x33ff77); UI.toast('KWITIS LAUNCHER! 3 firework rockets \u2014 press 3 to fire', 3200); }
-function useRocket() { if (P.suited || P.rockets <= 0) return; P.rockets--; S.shake = 0.25; act({ a: 'rocket', f: P.f, x: P.x, y: P.eye, z: P.z, h: P.h, p: P.p }); }
+function useRocket() { if (P.suited || P.rockets <= 0) return; if (P.rockets === Infinity) { const n = performance.now(); if (n - (P.lastRk || 0) < 1100) return; P.lastRk = n; } else P.rockets--; S.shake = 0.25; act({ a: 'rocket', f: P.f, x: P.x, y: P.eye, z: P.z, h: P.h, p: P.p }); }
 function toggleSkate() { if (!P.skate) { UI.toast('Find a skateboard first (try Sports Hataw)'); return; } if (P.cr || P.vent) { UI.toast('Stand up to ride'); return; } P.riding = !P.riding; SFX.click(); }
 function useParol() { if (P.suited || P.parol <= 0) return; P.parol--; P.shieldT = 25; SFX.lantern(); UI.toast('Parol Shield! 25 seconds of light'); }
 function spawnBurst(e) {
@@ -14741,6 +14812,7 @@ function applyAct(a, who) {
     hostEv({ k: 'door', id: d.id, c: d.closed ? 1 : 0 });
   } else if (a.a === 'take') {
     const it = S.items[a.id]; if (!it || it.taken) return; it.taken = true;
+    addTaskTime(it.type);
     if (it.type === 'fuse') S.power = Math.min(100, S.power + 15);
     if (S.power > 0) S.black = false;
     hostEv({ k: 'took', id: it.id, by: who });
@@ -14754,7 +14826,7 @@ function applyAct(a, who) {
     for (const an of S.an) if (an.f === c.f && an.st !== 'dormant' && camSees(c, an, 18)) { if (an.ty === 'pusa') continue; stunAn(an, an.ty === 'higante' ? 8 : 5); }
     hostEv({ k: 'camflash', c: a.c });
   } else if (a.a === 'gen') {
-    if (S.genUsed) return; S.genUsed = true; S.power = Math.min(100, S.power + 25); S.black = false; hostEv({ k: 'gen' });
+    if (S.genUsed) return; S.genUsed = true; addTaskTime('gen'); S.power = Math.min(100, S.power + 25); S.black = false; hostEv({ k: 'gen' });
   } else if (a.a === 'rescue') {
     if (S.suited.has(a.id)) { S.suited.delete(a.id); hostEv({ k: 'freed', id: a.id, by: who }); }
   } else if (a.a === 'lantern') {
@@ -14765,14 +14837,14 @@ function applyAct(a, who) {
   } else if (a.a === 'noise') {
     S.noises.push({ f: a.f, x: a.x, z: a.z, r: a.r || 10 });
   } else if (a.a === 'panel') {
-    const pn = S.panels[a.id]; if (!pn || pn.done) return; pn.done = true; S.power = Math.min(100, S.power + 15); if (S.power > 0) S.black = false; hostEv({ k: 'panel', id: a.id, by: who });
+    const pn = S.panels[a.id]; if (!pn || pn.done) return; pn.done = true; addTaskTime('panel'); S.power = Math.min(100, S.power + 15); if (S.power > 0) S.black = false; hostEv({ k: 'panel', id: a.id, by: who });
   } else if (a.a === 'lullaby') {
-    if (S.pianoUsed) return; S.pianoUsed = true;
+    if (S.pianoUsed) return; S.pianoUsed = true; addTaskTime('lullaby');
     for (const an of S.an) { if (an.ty === 'higante') continue; if (an.st === 'dormant') an.act = Math.max(an.act, S.time + 20); else { an.st = 'return'; an.path = null; an.tgt = null; } }
     hostEv({ k: 'lullaby', by: who });
   } else if (a.a === 'freebot') {
     const b = S.bots[a.i]; if (!b || !b.su) return; b.su = false; b.st = 'wander'; b.path = null; b.tired = Math.min(0.85, b.tired + 0.2);
-    const g = Math.random() < 0.5 ? 'fuse' : 'battery'; if (g === 'fuse') S.power = Math.min(100, S.power + 10); hostEv({ k: 'botfree', i: a.i, by: who, g });
+    addTaskTime('freebot'); const g = Math.random() < 0.5 ? 'fuse' : 'battery'; if (g === 'fuse') S.power = Math.min(100, S.power + 10); hostEv({ k: 'botfree', i: a.i, by: who, g });
   } else if (a.a === 'confetti') {
     for (const an of S.an) { if (an.f !== a.f || an.st === 'dormant' || an.st === 'return') continue; if (eyeSees(a.f, a.x, a.z, -Math.sin(a.h), -Math.cos(a.h), an, 0.88, 15)) stunAn(an, an.ty === 'higante' ? 4 : 8); }
     hostEv({ k: 'confetti', f: a.f, x: a.x, z: a.z, h: a.h });
@@ -14810,10 +14882,10 @@ function onEv(e) {
   else if (e.k === 'panel') { const pn = S.panels[e.id]; if (pn) { pn.done = true; pn.m.userData.led.material.color.setHex(0x33ff77); } S.stats.puzzles++; if (e.by === pid()) { UI.toast('Power panel fixed: +15%'); SFX.good(); } else UI.radio('Team', UI.name(e.by) + ' fixed a power panel (+15%)'); }
   else if (e.k === 'lullaby') { S.pianoUsed = true; S.stats.puzzles++; SFX.jingle(); UI.toast('The Barkada heard the lullaby \u2014 back to the stage they go!', 3200); }
   else if (e.k === 'botc') { const b = S.bots[e.i]; if (b) { b.su = true; b.st = 'suited'; const an = S.an[e.a]; UI.radio('Radio', b.name + ' got zipped into a suit by ' + (an ? an.d.name : 'a mascot') + '!'); } }
-  else if (e.k === 'botfree') { const b = S.bots[e.i]; if (b) { b.su = false; b.st = 'wander'; S.stats.freed++; UI.radio(b.name, 'Salamat! Here, take this \u2014 ' + (e.g === 'fuse' ? 'a fuse (+10% power)' : 'a battery') + '.'); if (e.by === pid()) { SFX.good(); if (e.g === 'battery') P.bat = Math.min(100, P.bat + 35); } } }
+  else if (e.k === 'botfree') { const b = S.bots[e.i]; if (b) { b.su = false; b.st = 'wander'; S.stats.freed++; UI.radio(b.name, 'Salamat! I was just ' + (b.doing || 'shopping') + ' when they got me. Here, take this \u2014 ' + (e.g === 'fuse' ? 'a fuse (+10% power)' : 'a battery') + '.'); if (e.by === pid()) { SFX.good(); if (e.g === 'battery') P.bat = Math.min(100, P.bat + 35); } } }
   else if (e.k === 'dodge') { const b = S.bots[e.i]; if (b && Math.random() < 0.5) UI.radio(b.name, ['Muntik na ako!', 'Hindi ako magpapa-mascot!', 'Ayun, nakatakas!'][(Math.random() * 3) | 0]); }
   else if (e.k === 'scream') { const b = S.bots[e.i]; if (b && b.f === S.viewF && Math.hypot(b.x - P.x, b.z - P.z) < 30) { SFX.honk(); UI.radio(b.name, ['Tulong!', 'Ayoko maging mascot!', 'Takbo!!', 'Nanay ko po!'][(Math.random() * 4) | 0]); } }
-  else if (e.k === 'bark') { const v = e.f === S.viewF ? Math.max(0.15, 1 - Math.hypot(e.x - P.x, e.z - P.z) / 30) : 0.1; SFX.bark(v); if (!S.barkSeen) { S.barkSeen = true; UI.toast('Something barked\u2026 the mascot turned away!'); } }
+  else if (e.k === 'bark') { const v = e.f === S.viewF ? Math.max(0.15, 1 - Math.hypot(e.x - P.x, e.z - P.z) / 30) : 0.1; SFX.bark(v); if (e.big) { SFX.bark(v * 0.9); S.shake = Math.max(S.shake, 0.25 * v); } if (!S.barkSeen) { S.barkSeen = true; UI.toast('Something barked\u2026 the mascot turned away!'); } }
   else if (e.k === 'gift') { if (!S.items[e.it.id]) { S.items[e.it.id] = e.it; itemMeshes[e.it.id] = itemMesh(e.it); itemMeshes[e.it.id].visible = e.it.f === S.viewF; } }
   else if (e.k === 'bpower') { SFX.bark(0.4); UI.toast('The lights flicker back on\u2026 (+10% power)'); UI.radio('???', '*arf!*'); }
   else if (e.k === 'confetti') { if (e.f === S.viewF) spawnConfetti(e.f, e.x, e.z, e.h); SFX.pop(); }
@@ -14823,6 +14895,7 @@ function onEv(e) {
     else { if (was || S.mode === 'cctv') { if (S.mode === 'cctv') exitCCTV(); UI.closePanels(); UI.toast('SWITCH! Leave the CCTV room and explore.', 3500); } UI.radio('Switch', UI.name(e.id) + ' is the Navigator now' + (e.why === 'caught' ? ' (the last one got zipped into a suit!)' : '') + '. Follow their pings.'); }
   }
   else if (e.k === 'navwarn') { UI.toast(S.navId === pid() ? 'Switch in 10 seconds \u2014 get ready to leave!' : 'Switch in 10 seconds!', 2200); }
+  else if (e.k === 'berserk') { S.berserk = !!e.on; if (e.on) { SFX.boss(); SFX.scream(true); UI.toast('Power is low\u2026 the Barkada went BERSERK!', 3200); UI.radio('Kuya Bert', 'Below 20 percent! They\u2019re faster and\u2026 they look wrong. Get fuses NOW.'); } else UI.toast('The power is back up. The Barkada calm down\u2026', 2500); }
   else if (e.k === 'stun') { const a = S.an[e.a]; if (a && a.f === S.viewF) SFX.zap(); }
   else if (e.k === 'boss') { SAVE.bossSeen = true; saveGame(); SFX.boss(); if (S.solo && !S.bossCut && S.mode === 'play') { S.bossCut = true; playCut('boss'); } else UI.toast('Ang Higante has come down from the rooftop\u2026', 3500); UI.radio('Kuya Bert', 'Ano \u2019yon?! Something huge on the 2nd floor. Flashlights won\u2019t work on it. Use camera flashes \u2014 and RUN.'); }
   else if (e.k === 'snort') { const a = S.an[e.a]; if (a && a.f === S.viewF) { SFX.snort(); if (Math.hypot(a.x - P.x, a.z - P.z) < 16) UI.toast('Kardong is about to CHARGE! Step aside!', 1600); } }
@@ -14897,7 +14970,8 @@ function caught(p, a) {
   const PL = players(); if (S.solo || PL.every(q => S.suited.has(q.id))) { setTimeout(() => { if (S.solo) return; hostEv({ k: 'over' }); }, 1800); }
 }
 function aiUpdate(dt) {
-  const PL = players(), alive0 = PL.filter(p => !p.su), mult = (1 + 0.07 * (S.night - 1)) * (S.power <= 0 ? 1.15 : 1);
+  const PL = players(), alive0 = PL.filter(p => !p.su), mult = (1 + 0.07 * (S.night - 1)) * (S.power <= 0 ? 1.15 : 1) * (S.berserk ? 2 : 1);
+  const bz = S.power <= 20; if (bz !== S.berserk) { S.berserk = bz; hostEv({ k: 'berserk', on: bz ? 1 : 0 }); }
   const alive = alive0.concat(S.bots.filter(b => !b.su).map(b => ({ id: b.id, bot: b, f: b.f, x: b.x, z: b.z, h: b.h, p: 0, fl: false, mk: false, sp: b.spd, cr: false, vent: false, su: false, cm: -1, dr: null, lt: 1, sh: false })));
   for (const a of S.an) {
     a.crowCD -= dt; a.cymCD -= dt; a.chargeCD -= dt; a.anger = Math.max(0, a.anger - dt * 0.012);
@@ -14953,7 +15027,8 @@ function aiUpdate(dt) {
       else if (a.st === 'investigate' && a.f === a.gf) { a.st = 'linger'; a.lt = 2.5; a.path = null; continue; }
       else if (a.f === a.gf || !a.path) { patrol(a, PL); }
     }
-    moveAn(a, dt, (a.st === 'chase' ? (a.scary ? 3.3 : a.d.chase) : a.d.walk) * mult * (a.st === 'return' ? 1.3 : 1), PL);
+    let sp = (a.st === 'chase' ? (a.scary ? 3.3 : a.d.chase) : a.d.walk) * mult * (a.st === 'return' ? 1.3 : 1); if (S.berserk) sp = Math.min(sp, a.st === 'chase' ? 4.6 : 4.0) * (0.75 + 0.5 * Math.abs(Math.sin(S.time * 2.3 + a.k)));
+    moveAn(a, dt, sp, PL);
   }
   botsUpdate(dt); bantayUpdate(dt, PL);
   S.noises.length = 0;
@@ -14982,7 +15057,7 @@ function moveAn(a, dt, spd, PL) {
 function hostTick(dt) {
   if (S.day) { dayTick(dt); return; }
   if (S.over || S.ending) return;
-  S.time += dt;
+  S.time += dt * timeRate(dt); if (S.tbank > 0) { const x = Math.min(S.tbank, dt * 1.2); S.tbank -= x; S.time += x; }
   const closed = W.doors.filter(d => d.closed).length, cctvUsers = players().filter(p => p.cm >= 0).length;
   if (S.power > 0) { S.power -= dt * (100 / (6 * SAVE.set.hour) * STORY.drain[S.night - 1] + closed * 0.025 + cctvUsers * 0.03); if (S.power <= 0) { S.power = 0; W.doors.forEach(d => { if (d.closed) { d.closed = false; hostEv({ k: 'door', id: d.id, c: 0 }); } }); hostEv({ k: 'black' }); } }
   W.doors.forEach(d => { if (d.jam > 0) d.jam -= dt; });
@@ -15214,6 +15289,7 @@ function visuals(dt, t) {
   { const H = S.H, dg = D.dog; if (H) { if (!auth) { const k = Math.min(1, dt * 8); H.x += (H.tx - H.x) * k; H.z += (H.tz - H.z) * k; let dh = H.th - H.h; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); H.h += dh * k; }
     H.spd = Math.hypot(H.x - H.px, H.z - H.pz) / Math.max(dt, 1e-4); H.px = H.x; H.pz = H.z;
     dg.g.visible = H.vis && H.f === S.viewF && S.mode !== 'scare'; dg.g.position.set(H.x, 0, H.z); dg.g.rotation.y = H.h; GFX.animDog(dg, dt, t, H.spd);
+    { const big = S.power <= 20 && !S.day; dg.sz = (dg.sz || 1) + ((big ? 3 : 1) - (dg.sz || 1)) * Math.min(1, dt * 1.5); dg.g.scale.setScalar(dg.sz); if (big && H.spd < 0.3) { dg.head.rotation.x = -0.35 + Math.sin(t * 0.7) * 0.08; dg.head.rotation.y = Math.sin(t * 0.5) * 0.25; } }
     if (dg.g.visible && !SAVE.bantay && S.mode === 'play' && H.f === P.f && eyeSees(P.f, P.x, P.z, -Math.sin(P.h), -Math.cos(P.h), H, 0.9, 14)) { SAVE.bantay = true; saveGame(); UI.toast('Was that\u2026 a dog with blue eyes?', 3000); } } }
   nightMeshes.forEach(m => m.visible = m.userData.f === S.viewF);
   sdMeshes.forEach((m, i) => { const d = W.sdoors[i]; if (d.f !== S.viewF) return; const tgt = d.open ? 1 : 0; if (Math.abs(m.v - tgt) > 0.001) { m.v += (tgt - m.v) * Math.min(1, dt * 7); m.halves.forEach(h => h.hinge.rotation.y = h.open * m.v); } });
@@ -15246,9 +15322,22 @@ function animAnim(a, dt, t) {
   if (a.ty === 'higante') { a.m.g.visible = a.m.g.visible && a.st !== 'dormant'; GFX.animHigante(a.m, dt, t, a.spd, mode); return; }
   if (a.st === 'dormant') { a.m.eyeMat.color.setScalar(S.mode === 'menu' ? 1 : 0.35); a.m.glow.material.opacity = S.mode === 'menu' ? 0.9 : 0.15; a.m.head.rotation.set(0.15, 0, 0); return; }
   if (a.st === 'windup' || a.st === 'charge') { GFX.animAn(a.m, dt, t, a.st === 'charge' ? 8 : 0.6, 3); a.m.head.rotation.x = 0.55 + (a.st === 'windup' ? Math.sin(t * 40) * 0.08 : 0); a.m.arms.forEach(r => r.rotation.x = 0.3); return; }
+  if (!(S.power <= 20) && a.ty !== 'pusa') a.m.glow.material.color.copy(a.m.eyeCol);
   if (a.ty === 'pusa') { const m = a.m, sc = a.scary; m.body.scale.y += ((sc ? 1.32 : 1) - m.body.scale.y) * Math.min(1, dt * 3); m.mouth.visible = m.teeth.visible = sc; m.eyeCol.setHex(sc ? 0xff2a2a : 0x40e0ff); m.glow.material.color.setHex(sc ? 0xff2a2a : 0x40e0ff); }
   GFX.animAn(a.m, dt, t, a.spd, mode);
+  berserkLook(a, dt, t, mode);
   if (a.ty === 'pusa' && a.scary && mode === 2) { a.m.eyeMat.color.copy(a.m.eyeCol); a.m.head.rotation.z = (Math.random() - 0.5) * 0.35; a.m.head.rotation.y = Math.sin(t * 3) * 0.6; }
+}
+function berserkLook(a, dt, t, mode) {
+  const m = a.m, on = S.power <= 20 && !S.day && S.mode !== 'menu'; m.bz = (m.bz || 0) + ((on ? 1 : 0) - (m.bz || 0)) * Math.min(1, dt * 2);
+  const k = m.bz; if (k < 0.01) { m.legs.forEach(l => l.scale.y = 1); m.arms.forEach(r => r.scale.y = 1); return; }
+  const ls = 1 + 0.75 * k, as = 1 + 1.0 * k; m.legs.forEach(l => l.scale.y = ls); m.arms.forEach(r => r.scale.y = as);
+  m.body.position.y += (ls - 1) * (m.legH || 0.7); m.body.rotation.x = 0.35 * k;
+  const q = v => Math.round(v * 5) / 5, jit = mode === 2 ? 0 : 1;
+  m.head.rotation.z = (0.55 + q(Math.sin(t * 1.7 + a.k)) * 0.25) * k * (a.k % 2 ? 1 : -1); m.head.rotation.x += q(Math.sin(t * 9 + a.k * 3)) * 0.15 * k * jit;
+  m.arms.forEach((r, i) => r.rotation.x = -1.3 * k + q(Math.sin(t * 6 + i * 2.1 + a.k)) * 0.35 * jit + (1 - k) * r.rotation.x);
+  if (Math.random() < 0.04 * jit) m.legs[(Math.random() * m.legs.length) | 0].rotation.z = (Math.random() - 0.5) * 0.5 * k; else m.legs.forEach(l => l.rotation.z *= 0.9);
+  m.eyeMat.color.setRGB(mode === 1 ? 0.15 : 1, 0.05, 0.05); m.glow.material.color.setHex(0xff1a1a); m.glow.material.opacity = mode === 1 ? 0.1 : 1; m.glow.scale.setScalar(1.6);
 }
 function listener() { if (S.mode === 'drone') return { f: D.f, x: D.x, z: D.z, h: D.h }; if (S.mode === 'cctv') { const c = CAMS[S.camIdx]; return { f: c.f, x: c.x, z: c.z, h: c.h + Math.PI }; } return { f: P.f, x: P.x, z: P.z, h: P.h }; }
 
@@ -15313,10 +15402,10 @@ function setupNetHandlers() {
   NET.on.ev = (d) => { if (!NET.host) onEv(d); };
   NET.on.act = (d, m) => { if (NET.host && S.mode !== 'menu') applyAct(d, m.peer); };
   NET.on.radio = (d, m) => { if (d.ep !== S.epoch && d.ep !== undefined) return; UI.radio(d.n || 'Team', d.m, d.p); SFX.radio(); };
-  NET.on.start = (d) => { if (NET.host) return; S.navOrder = d.nav || []; S.navId = d.navId; if (d.ep === S.epoch && S.mode !== 'menu') { UI.roleRefresh(); return; } UI.closeScreens(); S.solo = false; S.epoch = d.ep - 1; startNight(d.n, d.seed, null, d.t); S.epoch = d.ep; };
+  NET.on.start = (d) => { if (NET.host) return; S.navOrder = d.nav || []; S.navId = d.navId; if (d.goers) S.goers = d.goers; if (d.ep === S.epoch && S.mode !== 'menu') { UI.roleRefresh(); return; } UI.closeScreens(); S.solo = false; S.epoch = d.ep - 1; startNight(d.n, d.seed, null, d.t); S.epoch = d.ep; };
   NET.on.end = () => { if (!NET.host) UI.toMenu(); };
   NET.on.lost = () => { if (S.mode !== 'menu' && !S.solo) { UI.toast('Lost the connection to the host', 3000); setTimeout(() => { S.solo = true; NET.leave(); UI.toMenu(); }, 1500); } };
-  NET.on.peers = (ch) => { UI.lobbyRefresh && UI.lobbyRefresh(); if (NET.host && S.mode !== 'menu' && ch.joined.some(p => !p.isMe)) { assignRoles(); NET.emit('start', { ep: S.epoch, n: S.night, seed: S.seed, nav: S.navOrder, navId: S.navId, t: S.time }); } };
+  NET.on.peers = (ch) => { UI.lobbyRefresh && UI.lobbyRefresh(); if (NET.host && S.mode !== 'menu' && ch.joined.some(p => !p.isMe)) { assignRoles(); NET.emit('start', { ep: S.epoch, n: S.night, seed: S.seed, nav: S.navOrder, navId: S.navId, t: S.time, goers: S.goers }); } };
 }
 /* Co-op turns: one Navigator hides in a CCTV room with the map and cameras, the others explore.
    The Navigator role passes to the next player every in-game hour. */
@@ -15333,7 +15422,7 @@ function hostStart(n) {
   assignRoles(); const seed = (Math.random() * 1e6) | 0;
   S.solo = false; S.epoch = (S.epoch | 0) + 1; const ep = S.epoch + 1;
   S.navId = S.navOrder[0];
-  startNight(n, seed, S.roles, 0); S.epoch = ep; NET.emit('start', { ep, n, seed, nav: S.navOrder, navId: S.navId, t: 0 });
+  S.goers = goers(); startNight(n, seed, S.roles, 0); S.epoch = ep; NET.emit('start', { ep, n, seed, nav: S.navOrder, navId: S.navId, t: 0, goers: S.goers });
 }
 
 /* ---------- cutscenes ---------- */
